@@ -149,14 +149,7 @@ export const CatAvatar = ({ type, size = 'md', className = '' }: CatAvatarProps)
     lg: 'w-32 h-32',
   }
 
-  const faceSize = {
-    sm: { eyeSize: 6, mouthSize: 8 },
-    md: { eyeSize: 8, mouthSize: 12 },
-    lg: { eyeSize: 12, mouthSize: 16 },
-  }
-
   const { eyes, mouth, accessory, color, bgColor } = config
-  const { eyeSize } = faceSize[size]
 
   // 渲染眼睛
   const renderEyes = () => {
