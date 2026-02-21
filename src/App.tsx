@@ -3,13 +3,14 @@ import { useState, useEffect } from 'react'
 import LandingPage from './pages/LandingPage'
 import TestPage from './pages/TestPage'
 import ResultPage from './pages/ResultPage'
+import AdminPage from './pages/AdminPage'
 import { validateToken, getTokenFromUrl, markTokenUsed } from './utils/tokenAuth'
 
 // 获取 basename，适配 GitHub Pages 和本地开发
 const basename = import.meta.env.BASE_URL
 
 // 是否启用 Token 验证（设为 false 可关闭验证）
-const ENABLE_TOKEN_AUTH = true
+const ENABLE_TOKEN_AUTH = false
 
 // Token 验证包装组件
 function AuthWrapper({ children }: { children: React.ReactNode }) {
@@ -18,13 +19,27 @@ function AuthWrapper({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     async function checkAuth() {
+      console.log('=== 开始验证 ===')
+      console.log('ENABLE_TOKEN_AUTH:', ENABLE_TOKEN_AUTH)
+      console.log('当前路径:', window.location.pathname)
+      console.log('完整URL:', window.location.href)
+
       // 如果未启用验证，直接通过
       if (!ENABLE_TOKEN_AUTH) {
+        console.log('验证已关闭，直接通过')
+        setStatus('valid')
+        return
+      }
+
+      // admin 页面不需要验证
+      if (window.location.pathname.includes('/admin')) {
+        console.log('admin页面，跳过验证')
         setStatus('valid')
         return
       }
 
       const token = getTokenFromUrl()
+      console.log('从URL获取的token:', token)
 
       // 没有 token
       if (!token) {
@@ -92,6 +107,7 @@ function App() {
             <Route path="/" element={<LandingPage />} />
             <Route path="/test" element={<TestPage />} />
             <Route path="/result" element={<ResultPage />} />
+            <Route path="/admin" element={<AdminPage />} />
           </Routes>
         </div>
       </AuthWrapper>

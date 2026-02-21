@@ -1,10 +1,6 @@
 /**
- * Token 验证工具
- * 用于验证测试链接的有效性
+ * Token 验证工具（纯前端版本）
  */
-
-// 加密密钥（需要与生成脚本保持一致）
-const SECRET_KEY = 'cat-mbti-secret-key-2024'
 
 // Token 存储键名
 const STORAGE_KEY = 'cat_mbti_used_tokens'
@@ -21,58 +17,29 @@ interface TokenResult {
   payload?: TokenPayload
 }
 
-// Web Crypto API 解密函数
-async function decrypt(encryptedData: string): Promise<string | null> {
-  try {
-    const [ivHex, encrypted] = encryptedData.split(':')
-    if (!ivHex || !encrypted) return null
-
-    const iv = hexToUint8Array(ivHex)
-    const encryptedBytes = hexToUint8Array(encrypted)
-
-    // 导入密钥
-    const keyMaterial = await crypto.subtle.importKey(
-      'raw',
-      new TextEncoder().encode(SECRET_KEY),
-      { name: 'PBKDF2' },
-      false,
-      ['deriveBits', 'deriveKey']
-    )
-
-    const key = await crypto.subtle.deriveKey(
-      {
-        name: 'PBKDF2',
-        salt: new TextEncoder().encode('salt'),
-        iterations: 100000,
-        hash: 'SHA-256'
-      },
-      keyMaterial,
-      { name: 'AES-CBC', length: 256 },
-      false,
-      ['decrypt']
-    )
-
-    // 解密
-    const decrypted = await crypto.subtle.decrypt(
-      { name: 'AES-CBC', iv: iv as BufferSource },
-      key,
-      encryptedBytes as BufferSource
-    )
-
-    return new TextDecoder().decode(decrypted)
-  } catch (error) {
-    console.error('解密失败:', error)
-    return null
-  }
+// 生成随机 ID
+function generateId(): string {
+  return Math.random().toString(36).substring(2, 10) + Date.now().toString(36)
 }
 
-// 十六进制转 Uint8Array
-function hexToUint8Array(hex: string): Uint8Array {
-  const bytes = new Uint8Array(hex.length / 2)
-  for (let i = 0; i < hex.length; i += 2) {
-    bytes[i / 2] = parseInt(hex.substring(i, i + 2), 16)
+// 简单的 Base64 编码（带混淆）
+function encode(payload: TokenPayload): string {
+  const json = JSON.stringify(payload)
+  const base64 = btoa(encodeURIComponent(json))
+  // 简单混淆：反转字符串
+  return base64.split('').reverse().join('')
+}
+
+// 简单的 Base64 解码
+function decode(token: string): TokenPayload | null {
+  try {
+    // 反转回来
+    const base64 = token.split('').reverse().join('')
+    const json = decodeURIComponent(atob(base64))
+    return JSON.parse(json)
+  } catch {
+    return null
   }
-  return bytes
 }
 
 // 获取已使用的 Token 记录
@@ -98,30 +65,52 @@ function getTokenUsageCount(tokenId: string): number {
   return usedTokens[tokenId] || 0
 }
 
+// 生成 Token
+export function generateToken(expireHours: number = 48, maxUse: number = 1): string {
+  const payload: TokenPayload = {
+    exp: Math.floor(Date.now() / 1000) + expireHours * 60 * 60,
+    maxUse: maxUse,
+    id: generateId()
+  }
+  return encode(payload)
+}
+
+// 生成完整链接
+export function generateLink(expireHours: number = 48, maxUse: number = 1): string {
+  const token = generateToken(expireHours, maxUse)
+  const baseUrl = window.location.origin + window.location.pathname
+  return `${baseUrl}?token=${encodeURIComponent(token)}`
+}
+
 // 验证 Token
-export async function validateToken(token: string): Promise<TokenResult> {
+export function validateToken(token: string): TokenResult {
+  console.log('验证 Token:', token)
+
   if (!token) {
     return { valid: false, error: '缺少访问令牌' }
   }
 
   try {
-    // 解密 Token
-    const decrypted = await decrypt(token)
-    if (!decrypted) {
+    // 解码 Token
+    const payload = decode(token)
+    console.log('解码结果:', payload)
+
+    if (!payload) {
       return { valid: false, error: '无效的访问令牌' }
     }
 
-    // 解析 payload
-    const payload: TokenPayload = JSON.parse(decrypted)
-
     // 检查过期时间
     const now = Math.floor(Date.now() / 1000)
+    console.log('过期时间:', payload.exp, '当前时间:', now)
+
     if (payload.exp < now) {
       return { valid: false, error: '链接已过期' }
     }
 
     // 检查使用次数
     const usageCount = getTokenUsageCount(payload.id)
+    console.log('使用次数:', usageCount, '最大次数:', payload.maxUse)
+
     if (usageCount >= payload.maxUse) {
       return { valid: false, error: '链接已被使用' }
     }
