@@ -70,10 +70,10 @@ const TYPE_COLORS: Record<string, string> = {
 }
 
 // 生成结果图片 - 手机端高可读性 + 精致风格
-const generateResultImage = (result: TestResult): void => {
+const generateResultImage = (result: TestResult): Promise<Blob> => {
   const canvas = document.createElement('canvas')
   const ctx = canvas.getContext('2d')
-  if (!ctx) return
+  if (!ctx) return Promise.reject(new Error('Canvas not supported'))
 
   // roundRect polyfill
   if (!ctx.roundRect) {
@@ -516,11 +516,12 @@ const generateResultImage = (result: TestResult): void => {
   ctx.textAlign = 'center'
   ctx.fillText('🐾 扫码测测你家猫咪的性格 🐾', width / 2, height - outerMargin - 32)
 
-  // 下载
-  const link = document.createElement('a')
-  link.download = `猫咪MBTI-${result.type}.png`
-  link.href = canvas.toDataURL('image/png')
-  link.click()
+  // 返回 canvas 的 blob
+  return new Promise<Blob>((resolve) => {
+    canvas.toBlob((blob) => {
+      if (blob) resolve(blob)
+    }, 'image/png')
+  })
 }
 
 const ResultPage = () => {
@@ -532,9 +533,35 @@ const ResultPage = () => {
     navigate('/')
   }
 
-  const handleShare = () => {
-    if (result) {
-      generateResultImage(result)
+  const handleShare = async () => {
+    if (!result) return
+
+    try {
+      const blob = await generateResultImage(result)
+      const file = new File([blob], `猫咪MBTI-${result.type}.png`, { type: 'image/png' })
+
+      // 优先使用 Web Share API（移动端支持）
+      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          title: '猫咪MBTI性格测试',
+          text: `我的猫咪是${result.type}型人格！`,
+          files: [file],
+        })
+      } else {
+        // 降级方案：下载图片
+        const url = URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.download = `猫咪MBTI-${result.type}.png`
+        link.href = url
+        link.click()
+        URL.revokeObjectURL(url)
+      }
+    } catch (error) {
+      // 用户取消分享不报错
+      if ((error as Error).name !== 'AbortError') {
+        console.error('分享失败:', error)
+        alert('分享失败，请截图保存')
+      }
     }
   }
 
