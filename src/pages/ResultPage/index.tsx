@@ -514,7 +514,7 @@ const generateResultImage = (result: TestResult): Promise<Blob> => {
   ctx.fillStyle = '#A8A098'
   ctx.font = '18px system-ui, sans-serif'
   ctx.textAlign = 'center'
-  ctx.fillText('🐾 扫码测测你家猫咪的性格 🐾', width / 2, height - outerMargin - 32)
+  ctx.fillText('🐾你家猫咪的性格是什么呢？快来测测吧！🐾', width / 2, height - outerMargin - 32)
 
   // 返回 canvas 的 blob
   return new Promise<Blob>((resolve) => {
