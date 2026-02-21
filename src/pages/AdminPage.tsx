@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { generateToken } from '@/utils/tokenAuth'
+import { generateToken, validateToken } from '@/utils/tokenAuth'
 
 const AdminPage = () => {
   const [expireHours, setExpireHours] = useState(48)
@@ -7,6 +7,7 @@ const AdminPage = () => {
   const [count, setCount] = useState(5)
   const [links, setLinks] = useState<string[]>([])
   const [copied, setCopied] = useState<number | null>(null)
+  const [testResult, setTestResult] = useState<string>('')
 
   const handleGenerate = () => {
     const newLinks: string[] = []
@@ -17,6 +18,34 @@ const AdminPage = () => {
       newLinks.push(`${baseUrl}/?token=${encodeURIComponent(token)}`)
     }
     setLinks(newLinks)
+    setTestResult('')
+  }
+
+  // 测试 Token 编解码
+  const handleTest = () => {
+    if (links.length === 0) {
+      setTestResult('请先生成链接')
+      return
+    }
+
+    // 提取第一个链接的 token
+    const url = new URL(links[0])
+    const token = url.searchParams.get('token')
+
+    if (!token) {
+      setTestResult('无法提取 Token')
+      return
+    }
+
+    console.log('测试 Token:', token)
+    const result = validateToken(token)
+    console.log('验证结果:', result)
+
+    if (result.valid) {
+      setTestResult(`✅ 验证成功！\n${JSON.stringify(result.payload, null, 2)}`)
+    } else {
+      setTestResult(`❌ 验证失败: ${result.error}`)
+    }
   }
 
   const handleCopy = (index: number) => {
@@ -78,12 +107,27 @@ const AdminPage = () => {
             </div>
           </div>
 
-          <button
-            onClick={handleGenerate}
-            className="w-full py-3 bg-orange-500 text-white font-semibold rounded-xl hover:bg-orange-600 transition-colors"
-          >
-            生成链接
-          </button>
+          <div className="flex gap-3">
+            <button
+              onClick={handleGenerate}
+              className="flex-1 py-3 bg-orange-500 text-white font-semibold rounded-xl hover:bg-orange-600 transition-colors"
+            >
+              生成链接
+            </button>
+            <button
+              onClick={handleTest}
+              className="px-6 py-3 bg-blue-500 text-white font-semibold rounded-xl hover:bg-blue-600 transition-colors"
+            >
+              测试
+            </button>
+          </div>
+
+          {/* 测试结果 */}
+          {testResult && (
+            <div className={`mt-4 p-4 rounded-xl ${testResult.startsWith('✅') ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
+              <pre className="whitespace-pre-wrap text-sm">{testResult}</pre>
+            </div>
+          )}
         </div>
 
         {/* 链接列表 */}

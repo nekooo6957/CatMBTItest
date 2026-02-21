@@ -4,13 +4,13 @@ import LandingPage from './pages/LandingPage'
 import TestPage from './pages/TestPage'
 import ResultPage from './pages/ResultPage'
 import AdminPage from './pages/AdminPage'
-import { validateToken, getTokenFromUrl, markTokenUsed } from './utils/tokenAuth'
+import { validateToken, getTokenFromUrl, saveCurrentToken, clearCurrentToken } from './utils/tokenAuth'
 
 // 获取 basename，适配 GitHub Pages 和本地开发
 const basename = import.meta.env.BASE_URL
 
 // 是否启用 Token 验证（设为 false 可关闭验证）
-const ENABLE_TOKEN_AUTH = false
+const ENABLE_TOKEN_AUTH = true
 
 // Token 验证包装组件
 function AuthWrapper({ children }: { children: React.ReactNode }) {
@@ -43,6 +43,7 @@ function AuthWrapper({ children }: { children: React.ReactNode }) {
 
       // 没有 token
       if (!token) {
+        clearCurrentToken()
         setStatus('invalid')
         setError('请使用有效的测试链接访问')
         return
@@ -52,10 +53,11 @@ function AuthWrapper({ children }: { children: React.ReactNode }) {
       const result = await validateToken(token)
 
       if (result.valid && result.payload) {
-        // 标记已使用（测试开始时标记）
-        markTokenUsed(result.payload.id)
+        // 保存 token 以便后续使用
+        saveCurrentToken(token)
         setStatus('valid')
       } else {
+        clearCurrentToken()
         setStatus('invalid')
         setError(result.error || '验证失败')
       }

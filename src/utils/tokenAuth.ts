@@ -137,3 +137,18 @@ export function getTokenFromUrl(): string | null {
 export function clearAllTokenRecords() {
   localStorage.removeItem(STORAGE_KEY)
 }
+
+// 保存当前 Token 到 localStorage
+export function saveCurrentToken(token: string) {
+  localStorage.setItem('cat_mbti_current_token', token)
+}
+
+// 获取当前 Token
+export function getCurrentToken(): string | null {
+  return localStorage.getItem('cat_mbti_current_token')
+}
+
+// 清除当前 Token
+export function clearCurrentToken() {
+  localStorage.removeItem('cat_mbti_current_token')
+}

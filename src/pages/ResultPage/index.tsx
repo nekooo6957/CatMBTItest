@@ -1,9 +1,11 @@
+import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useTestStore } from '@/store/testStore'
 import { RadarChart } from '@/components/shared/RadarChart'
 import { DimensionBar } from '@/components/shared/DimensionBar'
 import { DimensionScore, TestResult } from '@/types'
+import { getCurrentToken } from '@/utils/tokenAuth'
 
 // 维度配对
 const DIMENSION_PAIRS = [
@@ -528,7 +530,64 @@ const ResultPage = () => {
   const navigate = useNavigate()
   const { result, resetTest } = useTestStore()
 
+  // 测试完成时标记 token 已使用
+  useEffect(() => {
+    if (result) {
+      console.log('=== 测试完成，开始标记 Token ===')
+      const token = getCurrentToken()
+      console.log('从 localStorage 获取的 token:', token)
+
+      if (token) {
+        // 解码 token 获取 id
+        try {
+          const base64 = token.split('').reverse().join('')
+          console.log('反转后的 base64:', base64)
+          const json = decodeURIComponent(atob(base64))
+          console.log('解码后的 JSON:', json)
+          const payload = JSON.parse(json)
+          console.log('Token payload:', payload)
+
+          if (payload.id) {
+            // 标记已使用
+            const usedTokens = JSON.parse(localStorage.getItem('cat_mbti_used_tokens') || '{}')
+            console.log('当前使用记录:', usedTokens)
+            usedTokens[payload.id] = (usedTokens[payload.id] || 0) + 1
+            localStorage.setItem('cat_mbti_used_tokens', JSON.stringify(usedTokens))
+            console.log('Token 已标记使用:', payload.id, '使用次数:', usedTokens[payload.id])
+          }
+        } catch (e) {
+          console.error('标记 token 失败:', e)
+        }
+      } else {
+        console.log('没有找到 token')
+      }
+    }
+  }, [result])
+
   const handleRetest = () => {
+    // 检查 token 是否还有使用次数
+    const token = getCurrentToken()
+    if (token) {
+      try {
+        const base64 = token.split('').reverse().join('')
+        const json = decodeURIComponent(atob(base64))
+        const payload = JSON.parse(json)
+
+        // 检查使用次数
+        const usedTokens = JSON.parse(localStorage.getItem('cat_mbti_used_tokens') || '{}')
+        const usageCount = usedTokens[payload.id] || 0
+
+        console.log('重新测试检查 - 使用次数:', usageCount, '最大次数:', payload.maxUse)
+
+        if (usageCount >= payload.maxUse) {
+          alert('此链接已达到最大使用次数，无法重新测试')
+          return
+        }
+      } catch (e) {
+        console.error('验证 token 失败:', e)
+      }
+    }
+
     resetTest()
     navigate('/')
   }
