@@ -5,6 +5,7 @@ import TestPage from './pages/TestPage'
 import ResultPage from './pages/ResultPage'
 import AdminPage from './pages/AdminPage'
 import { validateToken, getTokenFromUrl, saveCurrentToken, clearCurrentToken } from './utils/tokenAuth'
+import { useTestStore } from './store/testStore'
 
 // 获取 basename，适配 GitHub Pages 和本地开发
 const basename = import.meta.env.BASE_URL
@@ -16,6 +17,7 @@ const ENABLE_TOKEN_AUTH = true
 function AuthWrapper({ children }: { children: React.ReactNode }) {
   const [status, setStatus] = useState<'loading' | 'valid' | 'invalid'>('loading')
   const [error, setError] = useState<string>('')
+  const resetTest = useTestStore((state) => state.resetTest)
 
   useEffect(() => {
     async function checkAuth() {
@@ -55,6 +57,8 @@ function AuthWrapper({ children }: { children: React.ReactNode }) {
       if (result.valid && result.payload) {
         // 保存 token 以便后续使用
         saveCurrentToken(token)
+        // 清除之前的测试数据，开始新的测试
+        resetTest()
         setStatus('valid')
       } else {
         clearCurrentToken()
@@ -64,7 +68,7 @@ function AuthWrapper({ children }: { children: React.ReactNode }) {
     }
 
     checkAuth()
-  }, [])
+  }, [resetTest])
 
   if (status === 'loading') {
     return (
