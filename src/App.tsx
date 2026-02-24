@@ -82,8 +82,15 @@ function AuthWrapper({ children }: { children: React.ReactNode }) {
           markTokenUsed(result.payload.id)
         }
 
-        // 清除之前的测试数据，开始新的测试
-        resetTest()
+        // 只有在进行新测试时才重置（不是结果页且不是当前会话）
+        const shouldResetTest = !isResultPage && !isCurrentSession
+        console.log('是否应该重置测试:', shouldResetTest)
+        if (shouldResetTest) {
+          console.log('清除之前的测试数据，开始新的测试')
+          resetTest()
+        } else {
+          console.log('保留现有测试数据')
+        }
         setStatus('valid')
       } else {
         clearCurrentToken()
