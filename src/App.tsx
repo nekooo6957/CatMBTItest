@@ -4,7 +4,7 @@ import LandingPage from './pages/LandingPage'
 import TestPage from './pages/TestPage'
 import ResultPage from './pages/ResultPage'
 import AdminPage from './pages/AdminPage'
-import { validateToken, getTokenFromUrl, saveCurrentToken, clearCurrentToken, getCurrentToken } from './utils/tokenAuth'
+import { validateToken, getTokenFromUrl, saveCurrentToken, clearCurrentToken, getCurrentToken, markTokenUsed } from './utils/tokenAuth'
 import { useTestStore } from './store/testStore'
 
 // 获取 basename，适配 GitHub Pages 和本地开发
@@ -58,15 +58,30 @@ function AuthWrapper({ children }: { children: React.ReactNode }) {
         return
       }
 
-      // 结果页跳过使用次数检查（但仍检查过期时间）
-      console.log('是否结果页:', isResultPage)
+      // 判断是否是当前会话的 token（用于允许刷新）
+      const currentSessionToken = getCurrentToken()
+      const isCurrentSession = token === currentSessionToken
+      console.log('是否当前会话:', isCurrentSession)
+
+      // 跳过使用次数检查的条件：
+      // 1. 结果页刷新
+      // 2. 当前会话的 token（已在本次会话验证过）
+      const skipUsageCheck = isResultPage || isCurrentSession
+      console.log('是否跳过使用次数检查:', skipUsageCheck)
 
       // 验证 token
-      const result = await validateToken(token, isResultPage)
+      const result = await validateToken(token, skipUsageCheck)
 
       if (result.valid && result.payload) {
         // 保存 token 以便后续使用
         saveCurrentToken(token)
+
+        // 如果是新会话（token 来自 URL 且不是当前会话），标记为已使用
+        if (!isCurrentSession && getTokenFromUrl()) {
+          console.log('标记 token 为已使用')
+          markTokenUsed(result.payload.id)
+        }
+
         // 清除之前的测试数据，开始新的测试
         resetTest()
         setStatus('valid')
