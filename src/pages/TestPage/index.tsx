@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useTestStore, useProgress } from '@/store/testStore'
 import { SCALE_OPTIONS } from '@/types'
 import { ProgressBar } from '@/components/ui/ProgressBar'
-import { getTokenFromUrl } from '@/utils/tokenAuth'
 
 const TestPage = () => {
   const navigate = useNavigate()
