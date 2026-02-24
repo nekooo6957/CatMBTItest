@@ -9,14 +9,26 @@ import { getCurrentToken } from '@/utils/tokenAuth'
 
 // MBTI 类型到猫咪图片的映射
 const CAT_IMAGES: Partial<Record<MBTIType, string>> = {
+  // 分析家 (NT) - 紫色
   INTP: '/cats/INTP.jpg',
   ENTP: '/cats/ENTP.jpg',
-  INFP: '/cats/INFP.jpg',
-  ENFJ: '/cats/ENFJ.jpg',
   INTJ: '/cats/INTJ.jpg',
   ENTJ: '/cats/ENTJ.jpg',
-  INFJ: '/cats/INFJ.jpg',
+  // 外交家 (NF) - 绿色
+  INFP: '/cats/INFP.jpg',
   ENFP: '/cats/ENFP.jpg',
+  INFJ: '/cats/INFJ.jpg',
+  ENFJ: '/cats/ENFJ.jpg',
+  // 守护者 (SJ) - 蓝色
+  ISTJ: '/cats/ISTJ.jpg',
+  ISFJ: '/cats/ISFJ.jpg',
+  ESTJ: '/cats/ESTJ.jpg',
+  ESFJ: '/cats/ESFJ.jpg',
+  // 探险家 (SP) - 黄色
+  ISTP: '/cats/ISTP.jpg',
+  ISFP: '/cats/ISFP.jpg',
+  ESTP: '/cats/ESTP.jpg',
+  ESFP: '/cats/ESFP.jpg',
 }
 
 // 维度配对
