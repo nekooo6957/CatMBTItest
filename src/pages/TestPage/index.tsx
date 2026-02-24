@@ -1,11 +1,13 @@
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useTestStore, useProgress } from '@/store/testStore'
 import { SCALE_OPTIONS } from '@/types'
 import { ProgressBar } from '@/components/ui/ProgressBar'
+import { getTokenFromUrl } from '@/utils/tokenAuth'
 
 const TestPage = () => {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const { currentQuestionIndex, questions, answers, answerQuestion, goBack } = useTestStore()
   const progress = useProgress()
 
@@ -15,7 +17,10 @@ const TestPage = () => {
     answerQuestion(currentQuestion.id, score)
 
     if (currentQuestionIndex === questions.length - 1) {
-      navigate('/result')
+      // 保留 URL 中的 Token 参数
+      const token = searchParams.get('token')
+      const resultUrl = token ? `/result?token=${encodeURIComponent(token)}` : '/result'
+      navigate(resultUrl)
     }
   }
 

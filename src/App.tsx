@@ -40,8 +40,15 @@ function AuthWrapper({ children }: { children: React.ReactNode }) {
         return
       }
 
-      const token = getTokenFromUrl()
+      let token = getTokenFromUrl()
       console.log('从URL获取的token:', token)
+
+      // 结果页可以从 localStorage 获取 Token（用于刷新场景）
+      const isResultPage = window.location.pathname === '/result'
+      if (!token && isResultPage) {
+        token = getCurrentToken()
+        console.log('从localStorage获取的token:', token)
+      }
 
       // 没有 token
       if (!token) {
@@ -52,7 +59,6 @@ function AuthWrapper({ children }: { children: React.ReactNode }) {
       }
 
       // 结果页跳过使用次数检查（但仍检查过期时间）
-      const isResultPage = window.location.pathname === '/result'
       console.log('是否结果页:', isResultPage)
 
       // 验证 token
