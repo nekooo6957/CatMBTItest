@@ -51,8 +51,12 @@ function AuthWrapper({ children }: { children: React.ReactNode }) {
         return
       }
 
+      // 结果页跳过使用次数检查（但仍检查过期时间）
+      const isResultPage = window.location.pathname === '/result'
+      console.log('是否结果页:', isResultPage)
+
       // 验证 token
-      const result = await validateToken(token)
+      const result = await validateToken(token, isResultPage)
 
       if (result.valid && result.payload) {
         // 保存 token 以便后续使用

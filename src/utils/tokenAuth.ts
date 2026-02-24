@@ -83,8 +83,8 @@ export function generateLink(expireHours: number = 48, maxUse: number = 1): stri
 }
 
 // 验证 Token
-export function validateToken(token: string): TokenResult {
-  console.log('验证 Token:', token)
+export function validateToken(token: string, skipUsageCheck: boolean = false): TokenResult {
+  console.log('验证 Token:', token, '跳过使用次数检查:', skipUsageCheck)
 
   if (!token) {
     return { valid: false, error: '缺少访问令牌' }
@@ -107,12 +107,14 @@ export function validateToken(token: string): TokenResult {
       return { valid: false, error: '链接已过期' }
     }
 
-    // 检查使用次数
-    const usageCount = getTokenUsageCount(payload.id)
-    console.log('使用次数:', usageCount, '最大次数:', payload.maxUse)
+    // 检查使用次数（可选跳过）
+    if (!skipUsageCheck) {
+      const usageCount = getTokenUsageCount(payload.id)
+      console.log('使用次数:', usageCount, '最大次数:', payload.maxUse)
 
-    if (usageCount >= payload.maxUse) {
-      return { valid: false, error: '链接已被使用' }
+      if (usageCount >= payload.maxUse) {
+        return { valid: false, error: '链接已被使用' }
+      }
     }
 
     return { valid: true, payload }
