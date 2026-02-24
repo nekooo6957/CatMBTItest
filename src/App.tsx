@@ -4,7 +4,7 @@ import LandingPage from './pages/LandingPage'
 import TestPage from './pages/TestPage'
 import ResultPage from './pages/ResultPage'
 import AdminPage from './pages/AdminPage'
-import { validateToken, getTokenFromUrl, saveCurrentToken, clearCurrentToken } from './utils/tokenAuth'
+import { validateToken, getTokenFromUrl, saveCurrentToken, clearCurrentToken, getCurrentToken } from './utils/tokenAuth'
 import { useTestStore } from './store/testStore'
 
 // 获取 basename，适配 GitHub Pages 和本地开发
