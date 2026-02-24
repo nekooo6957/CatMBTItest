@@ -106,7 +106,136 @@ const loadImage = (src: string): Promise<HTMLImageElement | null> => {
   })
 }
 
-// 生成结果图片 - 手机端高可读性 + 精致风格
+// 绘制圆角矩形辅助函数
+const roundRect = (
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  r: number | number[]
+) => {
+  const radii = typeof r === 'number' ? [r, r, r, r] : r
+  const [tl, tr, br, bl] = radii as number[]
+  ctx.beginPath()
+  ctx.moveTo(x + tl, y)
+  ctx.lineTo(x + w - tr, y)
+  ctx.quadraticCurveTo(x + w, y, x + w, y + tr)
+  ctx.lineTo(x + w, y + h - br)
+  ctx.quadraticCurveTo(x + w, y + h, x + w - br, y + h)
+  ctx.lineTo(x + bl, y + h)
+  ctx.quadraticCurveTo(x, y + h, x, y + h - bl)
+  ctx.lineTo(x, y + tl)
+  ctx.quadraticCurveTo(x, y, x + tl, y)
+  ctx.closePath()
+}
+
+// 绘制雷达图
+const drawRadarChart = (
+  ctx: CanvasRenderingContext2D,
+  cx: number,
+  cy: number,
+  radius: number,
+  data: DimensionScore[]
+) => {
+  const dimensions = ['E', 'I', 'S', 'N', 'T', 'F', 'J', 'P']
+  const dimLabels: Record<string, string> = {
+    E: '外向E', I: '内向I', S: '务实S', N: '好奇N',
+    T: '独立T', F: '粘人F', J: '规律J', P: '随性P'
+  }
+  const dimColors: Record<string, string> = {
+    E: '#FB923C', I: '#FDA4AF', S: '#22D3EE', N: '#7DD3FC',
+    T: '#34D399', F: '#5EEAD4', J: '#A78BFA', P: '#F0ABFC'
+  }
+
+  const angleStep = (Math.PI * 2) / dimensions.length
+  const startAngle = -Math.PI / 2 // 从顶部开始
+
+  // 绘制网格
+  ctx.strokeStyle = '#E8DDD4'
+  ctx.lineWidth = 1
+  for (let i = 1; i <= 4; i++) {
+    const r = (radius * i) / 4
+    ctx.beginPath()
+    for (let j = 0; j <= dimensions.length; j++) {
+      const angle = startAngle + j * angleStep
+      const x = cx + Math.cos(angle) * r
+      const y = cy + Math.sin(angle) * r
+      if (j === 0) ctx.moveTo(x, y)
+      else ctx.lineTo(x, y)
+    }
+    ctx.stroke()
+  }
+
+  // 绘制轴线
+  ctx.strokeStyle = '#E8DDD4'
+  ctx.lineWidth = 1
+  for (let i = 0; i < dimensions.length; i++) {
+    const angle = startAngle + i * angleStep
+    ctx.beginPath()
+    ctx.moveTo(cx, cy)
+    ctx.lineTo(cx + Math.cos(angle) * radius, cy + Math.sin(angle) * radius)
+    ctx.stroke()
+
+    // 绘制标签
+    const labelR = radius + 35
+    const lx = cx + Math.cos(angle) * labelR
+    const ly = cy + Math.sin(angle) * labelR
+    ctx.fillStyle = '#6B635B'
+    ctx.font = 'bold 18px system-ui, sans-serif'
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'middle'
+    ctx.fillText(dimLabels[dimensions[i]], lx, ly)
+  }
+
+  // 计算数据点
+  const points = dimensions.map((dim, i) => {
+    const score = data.find(d => d.dimension === dim)
+    const percentage = score?.percentage || 50
+    const r = (percentage / 100) * radius
+    const angle = startAngle + i * angleStep
+    return {
+      x: cx + Math.cos(angle) * r,
+      y: cy + Math.sin(angle) * r,
+      percentage,
+      color: dimColors[dim]
+    }
+  })
+
+  // 绘制填充区域
+  ctx.beginPath()
+  points.forEach((p, i) => {
+    if (i === 0) ctx.moveTo(p.x, p.y)
+    else ctx.lineTo(p.x, p.y)
+  })
+  ctx.closePath()
+  ctx.fillStyle = 'rgba(255, 140, 107, 0.3)'
+  ctx.fill()
+
+  // 绘制边框线
+  ctx.beginPath()
+  points.forEach((p, i) => {
+    if (i === 0) ctx.moveTo(p.x, p.y)
+    else ctx.lineTo(p.x, p.y)
+  })
+  ctx.closePath()
+  ctx.strokeStyle = '#FF8C6B'
+  ctx.lineWidth = 3
+  ctx.stroke()
+
+  // 绘制数据点
+  points.forEach(p => {
+    ctx.beginPath()
+    ctx.arc(p.x, p.y, 6, 0, Math.PI * 2)
+    ctx.fillStyle = '#FFFFFF'
+    ctx.fill()
+    ctx.strokeStyle = p.color
+    ctx.lineWidth = 2
+    ctx.stroke()
+  })
+}
+
+// 生成结果图片 - 与结果页一致的卡片式布局
 const generateResultImage = async (result: TestResult): Promise<Blob> => {
   const canvas = document.createElement('canvas')
   const ctx = canvas.getContext('2d')
@@ -116,31 +245,10 @@ const generateResultImage = async (result: TestResult): Promise<Blob> => {
   const catImageSrc = CAT_IMAGES[result.type]
   const catImage = catImageSrc ? await loadImage(catImageSrc) : null
 
-  // roundRect polyfill
-  if (!ctx.roundRect) {
-    ctx.roundRect = function(x: number, y: number, w: number, h: number, r: number | number[]) {
-      const radii = typeof r === 'number' ? [r, r, r, r] : r
-      const [tl, tr, br, bl] = radii
-      this.beginPath()
-      this.moveTo(x + tl, y)
-      this.lineTo(x + w - tr, y)
-      this.quadraticCurveTo(x + w, y, x + w, y + tr)
-      this.lineTo(x + w, y + h - br)
-      this.quadraticCurveTo(x + w, y + h, x + w - br, y + h)
-      this.lineTo(x + bl, y + h)
-      this.quadraticCurveTo(x, y + h, x, y + h - bl)
-      this.lineTo(x, y + tl)
-      this.quadraticCurveTo(x, y, x + tl, y)
-      this.closePath()
-      return this
-    }
-  }
-
   const width = 750
-  const outerMargin = 28
-  const innerMargin = 48
-  const contentX = outerMargin + innerMargin
-  const contentWidth = width - (outerMargin + innerMargin) * 2
+  const margin = 32
+  const cardPadding = 28
+  const contentWidth = width - margin * 2
 
   // 文字自动换行函数
   const wrapText = (text: string, maxWidth: number, fontSize: number, lineHeight: number): { lines: string[], height: number } => {
@@ -170,44 +278,46 @@ const generateResultImage = async (result: TestResult): Promise<Blob> => {
     let rows = 1
 
     tags.forEach(tag => {
-      const tagW = ctx.measureText(tag).width + tagPadding * 2 + 14
+      const tagW = ctx.measureText(tag).width + tagPadding * 2
       if (currentX + tagW > maxW) {
         rows++
-        currentX = tagW
+        currentX = tagW + 8
       } else {
-        currentX += tagW
+        currentX += tagW + 8
       }
     })
-    return { rows, height: rows * (tagH + 12) }
+    return { rows, height: rows * (tagH + 8) }
   }
 
-  // 预计算所有内容高度 - 使用更大的字体和行高
-  const descResult = wrapText(result.typeDescription || '', contentWidth, 20, 36)
-  const traitsResult = wrapText(result.traits || '', contentWidth, 20, 36)
-  const suggestionsResult = wrapText(result.suggestions || '', contentWidth, 20, 36)
-  const traitTagsLayout = calculateTagsLayout(result.traitTags || [], 17, 38, 16, contentWidth)
-  const suggestionTagsLayout = calculateTagsLayout(result.suggestionTags || [], 17, 38, 16, contentWidth)
+  // 主题色
+  const typeColor = TYPE_COLORS[result.type] || '#FF8C6B'
+
+  // 预计算内容高度
+  const innerCardWidth = contentWidth - cardPadding * 2
+  const descResult = wrapText(result.typeDescription || '', innerCardWidth - 20, 22, 34)
+  const traitsResult = wrapText(result.traits || '', innerCardWidth - 20, 20, 32)
+  const suggestionsResult = wrapText(result.suggestions || '', innerCardWidth - 20, 20, 32)
+  const traitTagsLayout = calculateTagsLayout(result.traitTags || [], 16, 32, 14, innerCardWidth - 20)
+  const suggestionTagsLayout = calculateTagsLayout(result.suggestionTags || [], 16, 32, 14, innerCardWidth - 20)
 
   // 计算总高度
-  let totalHeight = outerMargin * 2
-  totalHeight += 80  // 顶部装饰 + 猫咪
-  totalHeight += 55  // 标题
-  totalHeight += 115 // MBTI 类型
-  totalHeight += 60  // 类型名称（增加5）
-  totalHeight += 55  // 昵称（增加5）
-  totalHeight += 48  // 引用（增加3）
-  totalHeight += 30  // 间距
+  let totalHeight = margin * 2
+  totalHeight += 90 // 顶部猫咪区域
+  totalHeight += 120 // MBTI 类型
+  totalHeight += 50 // 类型名称
+  totalHeight += 55 // 昵称徽章
+  totalHeight += 50 // 引用
+  totalHeight += 30 // 间距
   totalHeight += descResult.height + 30 // 描述
-  totalHeight += 55  // 维度标题
-  totalHeight += DIMENSION_PAIRS.length * 72 // 维度条（更大间距）
-  totalHeight += 30  // 分隔
-  totalHeight += 55  // 特点标题
-  totalHeight += traitTagsLayout.height + 25 // 特点标签
-  totalHeight += traitsResult.height + 30 // 特点内容
-  totalHeight += 55  // 建议标题
-  totalHeight += suggestionTagsLayout.height + 25 // 建议标签
-  totalHeight += suggestionsResult.height + 35 // 建议内容
-  totalHeight += 70  // 底部
+  totalHeight += 20 // 间距
+  totalHeight += 380 // 雷达图卡片
+  totalHeight += 20 // 间距
+  totalHeight += 70 + DIMENSION_PAIRS.length * 78 // 维度分析卡片
+  totalHeight += 20 // 间距
+  totalHeight += 60 + traitTagsLayout.height + 25 + traitsResult.height + 30 // 性格特点卡片
+  totalHeight += 20 // 间距
+  totalHeight += 60 + suggestionTagsLayout.height + 25 + suggestionsResult.height + 30 // 相处建议卡片
+  totalHeight += 80 // 底部
 
   const height = totalHeight
   canvas.width = width
@@ -231,159 +341,133 @@ const generateResultImage = async (result: TestResult): Promise<Blob> => {
     ctx.arc(x, y, r, 0, Math.PI * 2)
     ctx.fill()
   }
-  drawGlow(width * 0.2, 200, 200, 'rgba(255, 200, 180, 0.18)')
-  drawGlow(width * 0.8, 400, 180, 'rgba(255, 180, 160, 0.15)')
+  drawGlow(width * 0.2, 200, 180, 'rgba(255, 200, 180, 0.15)')
+  drawGlow(width * 0.8, 500, 200, 'rgba(255, 180, 160, 0.12)')
 
-  // === 双层边框 ===
-  ctx.strokeStyle = '#E8DDD4'
-  ctx.lineWidth = 3
-  ctx.beginPath()
-  ctx.roundRect(outerMargin, outerMargin, width - outerMargin * 2, height - outerMargin * 2, 20)
-  ctx.stroke()
+  let y = margin + 40
 
-  ctx.strokeStyle = '#F5EBE0'
-  ctx.lineWidth = 1.5
-  ctx.beginPath()
-  ctx.roundRect(outerMargin + 10, outerMargin + 10, width - outerMargin * 2 - 20, height - outerMargin * 2 - 20, 14)
-  ctx.stroke()
+  // === 猫咪头像（居中顶部）===
+  const catSize = 90
+  const catX = width / 2 - catSize / 2
+  const catY = y
 
-  // 四角装饰点
-  ctx.fillStyle = '#D4A574'
-  const cornerOffset = 24
-  ;[
-    { x: outerMargin + cornerOffset, y: outerMargin + cornerOffset },
-    { x: width - outerMargin - cornerOffset, y: outerMargin + cornerOffset },
-    { x: outerMargin + cornerOffset, y: height - outerMargin - cornerOffset },
-    { x: width - outerMargin - cornerOffset, y: height - outerMargin - cornerOffset },
-  ].forEach(({ x, y }) => {
-    ctx.beginPath()
-    ctx.arc(x, y, 5, 0, Math.PI * 2)
-    ctx.fill()
-  })
-
-  // === 头部 ===
-  let y = outerMargin + 55
-
-  // 顶部装饰线
-  ctx.strokeStyle = '#D4A574'
-  ctx.lineWidth = 1.5
-  ctx.beginPath()
-  ctx.moveTo(width / 2 - 60, y)
-  ctx.lineTo(width / 2 - 18, y)
-  ctx.moveTo(width / 2 + 18, y)
-  ctx.lineTo(width / 2 + 60, y)
-  ctx.stroke()
-
-  // 猫咪（统一使用 🐱）
-  const typeColor = TYPE_COLORS[result.type] || '#FF8C6B'
-
-  // 绘制猫咪背景光晕
-  const catGlow = ctx.createRadialGradient(width / 2, y + 45, 0, width / 2, y + 45, 60)
-  catGlow.addColorStop(0, typeColor + '30')
+  // 背景光晕
+  const catGlow = ctx.createRadialGradient(width / 2, catY + catSize / 2, 0, width / 2, catY + catSize / 2, 70)
+  catGlow.addColorStop(0, typeColor + '25')
   catGlow.addColorStop(1, 'transparent')
   ctx.fillStyle = catGlow
   ctx.beginPath()
-  ctx.arc(width / 2, y + 45, 60, 0, Math.PI * 2)
+  ctx.arc(width / 2, catY + catSize / 2, 70, 0, Math.PI * 2)
   ctx.fill()
 
-  // 绘制猫咪（使用图片或回退到 emoji）
   if (catImage) {
-    // 绘制圆形裁剪的图片
-    const catSize = 70
-    const catX = width / 2 - catSize / 2
-    const catY = y + 10
-
-    // 创建圆形裁剪路径
     ctx.save()
     ctx.beginPath()
     ctx.arc(width / 2, catY + catSize / 2, catSize / 2, 0, Math.PI * 2)
     ctx.closePath()
     ctx.clip()
-
-    // 绘制图片
     ctx.drawImage(catImage, catX, catY, catSize, catSize)
     ctx.restore()
 
-    // 绘制圆形边框
-    ctx.strokeStyle = typeColor + '60'
-    ctx.lineWidth = 3
+    ctx.strokeStyle = typeColor + '50'
+    ctx.lineWidth = 4
     ctx.beginPath()
     ctx.arc(width / 2, catY + catSize / 2, catSize / 2, 0, Math.PI * 2)
     ctx.stroke()
   } else {
-    // 回退到 emoji
-    ctx.font = '52px system-ui'
+    ctx.font = '60px system-ui'
     ctx.textAlign = 'center'
-    ctx.fillText('🐱', width / 2, y + 55)
+    ctx.textBaseline = 'middle'
+    ctx.fillText('🐱', width / 2, catY + catSize / 2)
   }
+  y += catSize + 35
 
-  // 标题
-  ctx.fillStyle = '#8B7355'
-  ctx.font = 'bold 30px system-ui, sans-serif'
-  ctx.fillText('猫咪MBTI性格测试', width / 2, y + 105)
-  y += 130
-
-  // MBTI 类型（使用主题色）
+  // === MBTI 类型 ===
   ctx.fillStyle = typeColor
-  ctx.font = 'bold 84px serif'
-  ctx.fillText(result.type, width / 2, y + 60)
-  y += 100
-
-  // 类型名称（使用主题色）
-  ctx.fillStyle = typeColor
-  ctx.font = '28px serif'
-  ctx.fillText(result.typeName, width / 2, y)
+  ctx.font = 'bold 88px Georgia, serif'
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'alphabetic'
+  ctx.fillText(result.type, width / 2, y)
   y += 55
 
-  // 昵称徽章（使用主题色）
-  const nicknameW = ctx.measureText(result.typeNickname).width + 60
-  ctx.fillStyle = typeColor + '15'
-  ctx.beginPath()
-  ctx.roundRect(width / 2 - nicknameW / 2, y, nicknameW, 42, 21)
-  ctx.fill()
-  ctx.strokeStyle = typeColor + '60'
-  ctx.lineWidth = 1.5
-  ctx.stroke()
-
+  // 类型名称
   ctx.fillStyle = typeColor
-  ctx.font = 'italic 20px system-ui, sans-serif'
-  ctx.fillText(result.typeNickname, width / 2, y + 28)
-  y += 65
+  ctx.font = '32px system-ui, sans-serif'
+  ctx.fillText(result.typeName, width / 2, y)
+  y += 50
+
+  // 昵称徽章
+  ctx.font = 'italic 22px system-ui, sans-serif'
+  const nicknameW = ctx.measureText(`「${result.typeNickname}」`).width + 50
+  ctx.fillStyle = typeColor + '15'
+  roundRect(ctx, width / 2 - nicknameW / 2, y - 30, nicknameW, 46, 23)
+  ctx.fill()
+  ctx.strokeStyle = typeColor + '40'
+  ctx.lineWidth = 2
+  ctx.stroke()
+  ctx.fillStyle = typeColor
+  ctx.fillText(`「${result.typeNickname}」`, width / 2, y)
+  y += 55
 
   // 引用
-  ctx.fillStyle = '#9A918A'
-  ctx.font = '19px system-ui, sans-serif'
+  ctx.fillStyle = '#8B8178'
+  ctx.font = 'italic 22px system-ui, sans-serif'
   ctx.fillText(`"${result.quote}"`, width / 2, y)
-  y += 40
-
-  // 分隔线
-  ctx.strokeStyle = '#E8DDD4'
-  ctx.lineWidth = 1.5
-  ctx.beginPath()
-  ctx.moveTo(contentX, y)
-  ctx.lineTo(width - contentX, y)
-  ctx.stroke()
-  y += 32
+  y += 50
 
   // 描述
   ctx.fillStyle = '#5C5650'
-  ctx.font = '20px system-ui, sans-serif'
-  ctx.textAlign = 'center'
+  ctx.font = '22px system-ui, sans-serif'
   descResult.lines.forEach(line => {
     ctx.fillText(line, width / 2, y)
-    y += 36
+    y += 34
   })
-  y += 18
+  y += 35
 
-  // === 性格维度 ===
+  // === 绘制卡片辅助函数 ===
+  const drawCard = (cardY: number, cardH: number) => {
+    // 卡片阴影
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.04)'
+    roundRect(ctx, margin + 3, cardY + 3, contentWidth, cardH, 24)
+    ctx.fill()
+
+    // 卡片背景
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.85)'
+    roundRect(ctx, margin, cardY, contentWidth, cardH, 24)
+    ctx.fill()
+
+    // 卡片边框
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)'
+    ctx.lineWidth = 1.5
+    ctx.stroke()
+  }
+
+  // === 雷达图卡片 ===
+  const radarCardH = 360
+  drawCard(y, radarCardH)
+
+  // 卡片标题
   ctx.fillStyle = '#4A4540'
   ctx.font = 'bold 26px system-ui, sans-serif'
   ctx.textAlign = 'left'
-  ctx.fillText('✦ 性格维度', contentX, y)
-  y += 45
+  ctx.fillText('✦ 性格雷达图', margin + cardPadding, y + 45)
 
-  const labelW = 85
-  const barW = contentWidth - labelW * 2
+  // 绘制雷达图
+  drawRadarChart(ctx, width / 2, y + 195, 110, result.allDimensionScores || result.dimensionScores)
+
+  y += radarCardH + 20
+
+  // === 性格维度卡片 ===
+  const dimCardH = 60 + DIMENSION_PAIRS.length * 78
+  drawCard(y, dimCardH)
+
+  ctx.fillStyle = '#4A4540'
+  ctx.font = 'bold 26px system-ui, sans-serif'
+  ctx.fillText('✦ 性格维度', margin + cardPadding, y + 45)
+
+  let dimY = y + 75
+  const labelW = 90
+  const barMaxW = innerCardWidth - labelW * 2 - 20
 
   DIMENSION_PAIRS.forEach(({ positive, negative }) => {
     const allScores = result.allDimensionScores || result.dimensionScores
@@ -402,186 +486,173 @@ const generateResultImage = async (result: TestResult): Promise<Blob> => {
     const winningColor = leftIsWinning ? DIMENSION_COLORS[leftDim] : DIMENSION_COLORS[rightDim]
     const displayPercent = leftIsWinning ? leftPercent : (100 - leftPercent)
 
-    // 进度条参数（更大）
-    const barX = contentX + labelW
-    const barH = 18
-    const barY = y + 5
-    const leftW = (leftPercent / 100) * barW
-    const rightW = barW - leftW
-
-    // 标签的垂直中心与进度条中心对齐
-    const labelBaselineY = barY + barH / 2 + 6
+    const barX = margin + cardPadding + labelW
+    const barH = 20
+    const barY = dimY + 8
+    const leftW = (leftPercent / 100) * barMaxW
+    const rightW = barMaxW - leftW
 
     // 左侧标签
     ctx.fillStyle = DIMENSION_COLORS[leftDim]
-    ctx.font = 'bold 22px system-ui, sans-serif'
+    ctx.font = 'bold 24px system-ui, sans-serif'
     ctx.textAlign = 'left'
-    ctx.fillText(leftDim, contentX, labelBaselineY)
+    ctx.fillText(leftDim, margin + cardPadding, dimY + 22)
     ctx.fillStyle = '#6B7280'
-    ctx.font = '16px system-ui, sans-serif'
-    ctx.fillText(DIMENSION_LABELS[leftDim], contentX + 28, labelBaselineY)
+    ctx.font = '18px system-ui, sans-serif'
+    ctx.fillText(DIMENSION_LABELS[leftDim], margin + cardPadding + 30, dimY + 22)
 
     // 右侧标签
     ctx.fillStyle = '#6B7280'
-    ctx.font = '16px system-ui, sans-serif'
+    ctx.font = '18px system-ui, sans-serif'
     ctx.textAlign = 'right'
-    ctx.fillText(DIMENSION_LABELS[rightDim], contentX + contentWidth - 28, labelBaselineY)
+    ctx.fillText(DIMENSION_LABELS[rightDim], margin + cardPadding + innerCardWidth - 30, dimY + 22)
     ctx.fillStyle = DIMENSION_COLORS[rightDim]
-    ctx.font = 'bold 22px system-ui, sans-serif'
-    ctx.fillText(rightDim, contentX + contentWidth, labelBaselineY)
+    ctx.font = 'bold 24px system-ui, sans-serif'
+    ctx.fillText(rightDim, margin + cardPadding + innerCardWidth, dimY + 22)
 
-    // 进度条
+    // 进度条背景
+    ctx.fillStyle = '#F3F4F6'
+    roundRect(ctx, barX, barY, barMaxW, barH, 10)
+    ctx.fill()
+
+    // 左侧进度条
     ctx.fillStyle = DIMENSION_COLORS[leftDim]
-    ctx.beginPath()
-    ctx.roundRect(barX, barY, leftW, barH, leftW < barW ? [9, 0, 0, 9] : 9)
+    roundRect(ctx, barX, barY, leftW, barH, leftW < barMaxW ? [10, 0, 0, 10] : 10)
     ctx.fill()
 
+    // 右侧进度条
     ctx.fillStyle = DIMENSION_COLORS[rightDim]
-    ctx.beginPath()
-    ctx.roundRect(barX + leftW, barY, rightW, barH, rightW < barW ? [0, 9, 9, 0] : 9)
+    roundRect(ctx, barX + leftW, barY, rightW, barH, rightW < barMaxW ? [0, 10, 10, 0] : 10)
     ctx.fill()
 
-    // 圆圈（更大）
-    const circleX = barX + (leftPercent / 100) * barW
+    // 中间圆圈
+    const circleX = barX + leftW
     const circleY = barY + barH / 2
-    const circleR = 22
+    const circleR = 26
 
     ctx.fillStyle = '#FFFFFF'
     ctx.beginPath()
     ctx.arc(circleX, circleY, circleR, 0, Math.PI * 2)
     ctx.fill()
+
     ctx.strokeStyle = winningColor
     ctx.lineWidth = 3
     ctx.stroke()
 
     ctx.fillStyle = winningColor
-    ctx.font = 'bold 13px system-ui, sans-serif'
+    ctx.font = 'bold 15px system-ui, sans-serif'
     ctx.textAlign = 'center'
-    ctx.fillText(`${displayPercent}%`, circleX, circleY + 5)
+    ctx.textBaseline = 'middle'
+    ctx.fillText(`${displayPercent}%`, circleX, circleY)
 
-    y += 72
+    dimY += 78
   })
 
-  y += 8
+  y += dimCardH + 20
 
-  // 分隔线
-  ctx.strokeStyle = '#E8DDD4'
-  ctx.lineWidth = 1.5
-  ctx.beginPath()
-  ctx.moveTo(contentX, y)
-  ctx.lineTo(width - contentX, y)
-  ctx.stroke()
-  y += 35
+  // === 性格特点卡片 ===
+  const traitsCardH = 60 + traitTagsLayout.height + 25 + traitsResult.height + 30
+  drawCard(y, traitsCardH)
 
-  // === 性格特点 ===
   ctx.fillStyle = '#4A4540'
   ctx.font = 'bold 26px system-ui, sans-serif'
   ctx.textAlign = 'left'
-  ctx.fillText('✦ 性格特点', contentX, y)
-  y += 38
+  ctx.textBaseline = 'alphabetic'
+  ctx.fillText('✦ 性格特点', margin + cardPadding, y + 45)
 
-  // 标签（更大）
-  ctx.font = '17px system-ui, sans-serif'
-  let tagX = contentX
-  const tagH = 38
-  const tagPad = 16
+  // 标签
+  ctx.font = '16px system-ui, sans-serif'
+  let tagX = margin + cardPadding
+  let tagY = y + 75
+  const tagH = 32
   result.traitTags?.forEach((tag) => {
-    const tagW = ctx.measureText(tag).width + tagPad * 2
-    if (tagX + tagW > contentX + contentWidth) {
-      tagX = contentX
-      y += tagH + 12
+    const tagW = ctx.measureText(tag).width + 28
+    if (tagX + tagW > margin + cardPadding + innerCardWidth) {
+      tagX = margin + cardPadding
+      tagY += tagH + 8
     }
 
     ctx.fillStyle = '#FFF5F0'
-    ctx.beginPath()
-    ctx.roundRect(tagX, y - tagH / 2, tagW, tagH, tagH / 2)
+    roundRect(ctx, tagX, tagY - tagH / 2, tagW, tagH, 16)
     ctx.fill()
     ctx.strokeStyle = '#E8C4B4'
-    ctx.lineWidth = 2
+    ctx.lineWidth = 1.5
     ctx.stroke()
 
     ctx.fillStyle = '#C4856A'
     ctx.textAlign = 'left'
-    ctx.fillText(tag, tagX + tagPad, y + 6)
-    tagX += tagW + 12
+    ctx.fillText(tag, tagX + 14, tagY + 5)
+    tagX += tagW + 8
   })
-  y += tagH / 2 + 22
 
   // 特点文字
+  let traitsY = tagY + tagH / 2 + 30
   ctx.font = '20px system-ui, sans-serif'
   ctx.fillStyle = '#5C5650'
   ctx.textAlign = 'left'
   traitsResult.lines.forEach(line => {
-    ctx.fillText(line, contentX, y)
-    y += 36
+    ctx.fillText(line, margin + cardPadding, traitsY)
+    traitsY += 32
   })
-  y += 15
 
-  // 分隔线
-  ctx.strokeStyle = '#E8DDD4'
-  ctx.lineWidth = 1.5
-  ctx.beginPath()
-  ctx.moveTo(contentX, y)
-  ctx.lineTo(width - contentX, y)
-  ctx.stroke()
-  y += 35
+  y += traitsCardH + 20
 
-  // === 相处建议 ===
+  // === 相处建议卡片 ===
+  const suggestionsCardH = 60 + suggestionTagsLayout.height + 25 + suggestionsResult.height + 30
+  drawCard(y, suggestionsCardH)
+
   ctx.fillStyle = '#4A4540'
   ctx.font = 'bold 26px system-ui, sans-serif'
-  ctx.textAlign = 'left'
-  ctx.fillText('✦ 相处建议', contentX, y)
-  y += 38
+  ctx.fillText('✦ 相处建议', margin + cardPadding, y + 45)
 
   // 标签
-  ctx.font = '17px system-ui, sans-serif'
-  tagX = contentX
+  ctx.font = '16px system-ui, sans-serif'
+  tagX = margin + cardPadding
+  tagY = y + 75
   result.suggestionTags?.forEach((tag) => {
-    const tagW = ctx.measureText(tag).width + tagPad * 2
-    if (tagX + tagW > contentX + contentWidth) {
-      tagX = contentX
-      y += tagH + 12
+    const tagW = ctx.measureText(tag).width + 28
+    if (tagX + tagW > margin + cardPadding + innerCardWidth) {
+      tagX = margin + cardPadding
+      tagY += tagH + 8
     }
 
     ctx.fillStyle = '#F0FDF4'
-    ctx.beginPath()
-    ctx.roundRect(tagX, y - tagH / 2, tagW, tagH, tagH / 2)
+    roundRect(ctx, tagX, tagY - tagH / 2, tagW, tagH, 16)
     ctx.fill()
     ctx.strokeStyle = '#B8DBC8'
-    ctx.lineWidth = 2
+    ctx.lineWidth = 1.5
     ctx.stroke()
 
     ctx.fillStyle = '#5A9A7C'
-    ctx.textAlign = 'left'
-    ctx.fillText(tag, tagX + tagPad, y + 6)
-    tagX += tagW + 12
+    ctx.fillText(tag, tagX + 14, tagY + 5)
+    tagX += tagW + 8
   })
-  y += tagH / 2 + 22
 
   // 建议文字
+  let suggY = tagY + tagH / 2 + 30
   ctx.font = '20px system-ui, sans-serif'
   ctx.fillStyle = '#5C5650'
-  ctx.textAlign = 'left'
   suggestionsResult.lines.forEach(line => {
-    ctx.fillText(line, contentX, y)
-    y += 36
+    ctx.fillText(line, margin + cardPadding, suggY)
+    suggY += 32
   })
 
+  y += suggestionsCardH + 40
+
   // === 底部 ===
-  // 底部装饰线
   ctx.strokeStyle = '#D4A574'
   ctx.lineWidth = 1.5
   ctx.beginPath()
-  ctx.moveTo(width / 2 - 60, height - outerMargin - 60)
-  ctx.lineTo(width / 2 - 18, height - outerMargin - 60)
-  ctx.moveTo(width / 2 + 18, height - outerMargin - 60)
-  ctx.lineTo(width / 2 + 60, height - outerMargin - 60)
+  ctx.moveTo(width / 2 - 70, height - margin - 55)
+  ctx.lineTo(width / 2 - 20, height - margin - 55)
+  ctx.moveTo(width / 2 + 20, height - margin - 55)
+  ctx.lineTo(width / 2 + 70, height - margin - 55)
   ctx.stroke()
 
-  ctx.fillStyle = '#A8A098'
-  ctx.font = '18px system-ui, sans-serif'
+  ctx.fillStyle = '#8B8178'
+  ctx.font = '20px system-ui, sans-serif'
   ctx.textAlign = 'center'
-  ctx.fillText('🐾你家猫咪的性格是什么呢？快来测测吧！🐾', width / 2, height - outerMargin - 32)
+  ctx.fillText('🐾 你家猫咪的性格是什么呢？快来测测吧！🐾', width / 2, height - margin - 22)
 
   // 返回 canvas 的 blob
   return new Promise<Blob>((resolve) => {
