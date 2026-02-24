@@ -130,15 +130,16 @@ const roundRect = (
   ctx.closePath()
 }
 
-// 绘制雷达图
+// 绘制平滑雷达图（与 Recharts 版本一致）
 const drawRadarChart = (
   ctx: CanvasRenderingContext2D,
   cx: number,
   cy: number,
   radius: number,
-  data: DimensionScore[]
+  data: DimensionScore[],
+  typeColor: string
 ) => {
-  const dimensions = ['E', 'I', 'S', 'N', 'T', 'F', 'J', 'P']
+  const dimensions = ['E', 'S', 'T', 'J', 'I', 'N', 'F', 'P'] // 与 Recharts 一致的顺序
   const dimLabels: Record<string, string> = {
     E: '外向E', I: '内向I', S: '务实S', N: '好奇N',
     T: '独立T', F: '粘人F', J: '规律J', P: '随性P'
@@ -151,19 +152,13 @@ const drawRadarChart = (
   const angleStep = (Math.PI * 2) / dimensions.length
   const startAngle = -Math.PI / 2 // 从顶部开始
 
-  // 绘制网格
+  // 绘制同心圆网格
   ctx.strokeStyle = '#E8DDD4'
   ctx.lineWidth = 1
   for (let i = 1; i <= 4; i++) {
     const r = (radius * i) / 4
     ctx.beginPath()
-    for (let j = 0; j <= dimensions.length; j++) {
-      const angle = startAngle + j * angleStep
-      const x = cx + Math.cos(angle) * r
-      const y = cy + Math.sin(angle) * r
-      if (j === 0) ctx.moveTo(x, y)
-      else ctx.lineTo(x, y)
-    }
+    ctx.arc(cx, cy, r, 0, Math.PI * 2)
     ctx.stroke()
   }
 
@@ -176,16 +171,6 @@ const drawRadarChart = (
     ctx.moveTo(cx, cy)
     ctx.lineTo(cx + Math.cos(angle) * radius, cy + Math.sin(angle) * radius)
     ctx.stroke()
-
-    // 绘制标签
-    const labelR = radius + 35
-    const lx = cx + Math.cos(angle) * labelR
-    const ly = cy + Math.sin(angle) * labelR
-    ctx.fillStyle = '#6B635B'
-    ctx.font = 'bold 18px system-ui, sans-serif'
-    ctx.textAlign = 'center'
-    ctx.textBaseline = 'middle'
-    ctx.fillText(dimLabels[dimensions[i]], lx, ly)
   }
 
   // 计算数据点
@@ -198,40 +183,57 @@ const drawRadarChart = (
       x: cx + Math.cos(angle) * r,
       y: cy + Math.sin(angle) * r,
       percentage,
-      color: dimColors[dim]
+      color: dimColors[dim],
+      angle,
+      label: dimLabels[dim]
     }
   })
 
-  // 绘制填充区域
+  // 绘制填充区域（使用渐变，类似 Recharts）
+  const gradient = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius)
+  gradient.addColorStop(0, typeColor + '66') // 中心更透明
+  gradient.addColorStop(0.5, typeColor + '44')
+  gradient.addColorStop(1, typeColor + '22') // 边缘更透明
+
   ctx.beginPath()
   points.forEach((p, i) => {
     if (i === 0) ctx.moveTo(p.x, p.y)
     else ctx.lineTo(p.x, p.y)
   })
   ctx.closePath()
-  ctx.fillStyle = 'rgba(255, 140, 107, 0.3)'
+  ctx.fillStyle = gradient
   ctx.fill()
 
-  // 绘制边框线
+  // 绘制边框线（带发光效果）
   ctx.beginPath()
   points.forEach((p, i) => {
     if (i === 0) ctx.moveTo(p.x, p.y)
     else ctx.lineTo(p.x, p.y)
   })
   ctx.closePath()
-  ctx.strokeStyle = '#FF8C6B'
-  ctx.lineWidth = 3
+  ctx.strokeStyle = typeColor
+  ctx.lineWidth = 2.5
   ctx.stroke()
 
-  // 绘制数据点
+  // 绘制标签（放在八边形的各个顶点外侧）
+  ctx.font = 'bold 16px system-ui, sans-serif'
+  ctx.textBaseline = 'middle'
   points.forEach(p => {
-    ctx.beginPath()
-    ctx.arc(p.x, p.y, 6, 0, Math.PI * 2)
-    ctx.fillStyle = '#FFFFFF'
-    ctx.fill()
-    ctx.strokeStyle = p.color
-    ctx.lineWidth = 2
-    ctx.stroke()
+    const labelR = radius + 28
+    const lx = cx + Math.cos(p.angle) * labelR
+    const ly = cy + Math.sin(p.angle) * labelR
+
+    // 根据位置调整对齐
+    if (Math.abs(lx - cx) < 10) {
+      ctx.textAlign = 'center'
+    } else if (lx > cx) {
+      ctx.textAlign = 'left'
+    } else {
+      ctx.textAlign = 'right'
+    }
+
+    ctx.fillStyle = '#6B635B'
+    ctx.fillText(p.label, lx, ly)
   })
 }
 
@@ -246,8 +248,8 @@ const generateResultImage = async (result: TestResult): Promise<Blob> => {
   const catImage = catImageSrc ? await loadImage(catImageSrc) : null
 
   const width = 750
-  const margin = 32
-  const cardPadding = 28
+  const margin = 48  // 增大边距
+  const cardPadding = 32  // 卡片内边距也增大
   const contentWidth = width - margin * 2
 
   // 文字自动换行函数
@@ -344,85 +346,93 @@ const generateResultImage = async (result: TestResult): Promise<Blob> => {
   drawGlow(width * 0.2, 200, 180, 'rgba(255, 200, 180, 0.15)')
   drawGlow(width * 0.8, 500, 200, 'rgba(255, 180, 160, 0.12)')
 
-  let y = margin + 40
+  // === 头部区域：猫咪 + 类型信息 ===
+  let y = margin + 50
 
-  // === 猫咪头像（居中顶部）===
-  const catSize = 90
-  const catX = width / 2 - catSize / 2
-  const catY = y
+  // 猫咪头像
+  const catSize = 100
+  const catCenterY = y + catSize / 2
 
   // 背景光晕
-  const catGlow = ctx.createRadialGradient(width / 2, catY + catSize / 2, 0, width / 2, catY + catSize / 2, 70)
-  catGlow.addColorStop(0, typeColor + '25')
+  const catGlow = ctx.createRadialGradient(width / 2, catCenterY, 0, width / 2, catCenterY, 75)
+  catGlow.addColorStop(0, typeColor + '30')
   catGlow.addColorStop(1, 'transparent')
   ctx.fillStyle = catGlow
   ctx.beginPath()
-  ctx.arc(width / 2, catY + catSize / 2, 70, 0, Math.PI * 2)
+  ctx.arc(width / 2, catCenterY, 75, 0, Math.PI * 2)
   ctx.fill()
 
+  // 绘制猫咪图片
+  const catX = width / 2 - catSize / 2
+  const catY = y
   if (catImage) {
     ctx.save()
     ctx.beginPath()
-    ctx.arc(width / 2, catY + catSize / 2, catSize / 2, 0, Math.PI * 2)
+    ctx.arc(width / 2, catCenterY, catSize / 2, 0, Math.PI * 2)
     ctx.closePath()
     ctx.clip()
     ctx.drawImage(catImage, catX, catY, catSize, catSize)
     ctx.restore()
 
+    // 圆形边框
     ctx.strokeStyle = typeColor + '50'
     ctx.lineWidth = 4
     ctx.beginPath()
-    ctx.arc(width / 2, catY + catSize / 2, catSize / 2, 0, Math.PI * 2)
+    ctx.arc(width / 2, catCenterY, catSize / 2, 0, Math.PI * 2)
     ctx.stroke()
   } else {
-    ctx.font = '60px system-ui'
+    ctx.font = '64px system-ui'
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
-    ctx.fillText('🐱', width / 2, catY + catSize / 2)
+    ctx.fillText('🐱', width / 2, catCenterY)
   }
-  y += catSize + 35
 
-  // === MBTI 类型 ===
+  // 移动到猫咪下方
+  y += catSize + 45
+
+  // MBTI 类型
   ctx.fillStyle = typeColor
-  ctx.font = 'bold 88px Georgia, serif'
+  ctx.font = 'bold 92px Georgia, serif'
   ctx.textAlign = 'center'
   ctx.textBaseline = 'alphabetic'
   ctx.fillText(result.type, width / 2, y)
-  y += 55
+  y += 60
 
   // 类型名称
   ctx.fillStyle = typeColor
-  ctx.font = '32px system-ui, sans-serif'
+  ctx.font = '34px system-ui, sans-serif'
   ctx.fillText(result.typeName, width / 2, y)
-  y += 50
+  y += 55
 
   // 昵称徽章
-  ctx.font = 'italic 22px system-ui, sans-serif'
-  const nicknameW = ctx.measureText(`「${result.typeNickname}」`).width + 50
-  ctx.fillStyle = typeColor + '15'
-  roundRect(ctx, width / 2 - nicknameW / 2, y - 30, nicknameW, 46, 23)
+  ctx.font = 'italic 24px system-ui, sans-serif'
+  const nicknameText = `「${result.typeNickname}」`
+  const nicknameW = ctx.measureText(nicknameText).width + 56
+  const badgeY = y - 32
+  ctx.fillStyle = typeColor + '18'
+  roundRect(ctx, width / 2 - nicknameW / 2, badgeY, nicknameW, 50, 25)
   ctx.fill()
-  ctx.strokeStyle = typeColor + '40'
+  ctx.strokeStyle = typeColor + '50'
   ctx.lineWidth = 2
   ctx.stroke()
   ctx.fillStyle = typeColor
-  ctx.fillText(`「${result.typeNickname}」`, width / 2, y)
-  y += 55
+  ctx.fillText(nicknameText, width / 2, y)
+  y += 60
 
   // 引用
   ctx.fillStyle = '#8B8178'
   ctx.font = 'italic 22px system-ui, sans-serif'
   ctx.fillText(`"${result.quote}"`, width / 2, y)
-  y += 50
+  y += 55
 
   // 描述
   ctx.fillStyle = '#5C5650'
   ctx.font = '22px system-ui, sans-serif'
   descResult.lines.forEach(line => {
     ctx.fillText(line, width / 2, y)
-    y += 34
+    y += 36
   })
-  y += 35
+  y += 40
 
   // === 绘制卡片辅助函数 ===
   const drawCard = (cardY: number, cardH: number) => {
@@ -453,7 +463,7 @@ const generateResultImage = async (result: TestResult): Promise<Blob> => {
   ctx.fillText('✦ 性格雷达图', margin + cardPadding, y + 45)
 
   // 绘制雷达图
-  drawRadarChart(ctx, width / 2, y + 195, 110, result.allDimensionScores || result.dimensionScores)
+  drawRadarChart(ctx, width / 2, y + 195, 105, result.allDimensionScores || result.dimensionScores, typeColor)
 
   y += radarCardH + 20
 
