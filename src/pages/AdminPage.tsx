@@ -12,9 +12,9 @@ const AdminPage = () => {
   const handleGenerate = () => {
     const newLinks: string[] = []
     for (let i = 0; i < count; i++) {
-      // 使用固定的 baseUrl
       const token = generateToken(expireHours, maxUse)
-      const baseUrl = 'https://nekooo6957.github.io/CatMBTItest'
+      // 使用当前域名
+      const baseUrl = window.location.origin
       newLinks.push(`${baseUrl}/?token=${encodeURIComponent(token)}`)
     }
     setLinks(newLinks)
