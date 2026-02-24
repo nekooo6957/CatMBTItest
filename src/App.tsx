@@ -136,7 +136,24 @@ function AuthWrapper({ children }: { children: React.ReactNode }) {
   return <>{children}</>
 }
 
+// 处理 404 重定向恢复
+function useRedirectRestore() {
+  useEffect(() => {
+    const redirect = sessionStorage.redirect
+    if (redirect) {
+      console.log('恢复重定向路径:', redirect)
+      delete sessionStorage.redirect
+      // 使用 replaceState 恢复原始 URL
+      window.history.replaceState(null, '', redirect)
+      // 触发一次页面重载以使用恢复后的 URL
+      window.location.reload()
+    }
+  }, [])
+}
+
 function App() {
+  useRedirectRestore()
+
   return (
     <Router basename={basename}>
       <AuthWrapper>

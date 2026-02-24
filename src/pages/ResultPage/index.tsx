@@ -4,8 +4,20 @@ import { motion } from 'framer-motion'
 import { useTestStore } from '@/store/testStore'
 import { RadarChart } from '@/components/shared/RadarChart'
 import { DimensionBar } from '@/components/shared/DimensionBar'
-import { DimensionScore, TestResult } from '@/types'
+import { DimensionScore, TestResult, MBTIType } from '@/types'
 import { getCurrentToken } from '@/utils/tokenAuth'
+
+// MBTI 类型到猫咪图片的映射
+const CAT_IMAGES: Partial<Record<MBTIType, string>> = {
+  INTP: '/cats/INTP.jpg',
+  ENTP: '/cats/ENTP.jpg',
+  INFP: '/cats/INFP.jpg',
+  ENFJ: '/cats/ENFJ.jpg',
+  INTJ: '/cats/INTJ.jpg',
+  ENTJ: '/cats/ENTJ.jpg',
+  INFJ: '/cats/INFJ.jpg',
+  ENFP: '/cats/ENFP.jpg',
+}
 
 // 维度配对
 const DIMENSION_PAIRS = [
@@ -71,11 +83,26 @@ const TYPE_COLORS: Record<string, string> = {
   ISTP: '#F59E0B', ISFP: '#F59E0B', ESTP: '#F59E0B', ESFP: '#F59E0B',
 }
 
+// 加载图片的辅助函数
+const loadImage = (src: string): Promise<HTMLImageElement | null> => {
+  return new Promise((resolve) => {
+    const img = new Image()
+    img.crossOrigin = 'anonymous'
+    img.onload = () => resolve(img)
+    img.onerror = () => resolve(null)
+    img.src = src
+  })
+}
+
 // 生成结果图片 - 手机端高可读性 + 精致风格
-const generateResultImage = (result: TestResult): Promise<Blob> => {
+const generateResultImage = async (result: TestResult): Promise<Blob> => {
   const canvas = document.createElement('canvas')
   const ctx = canvas.getContext('2d')
   if (!ctx) return Promise.reject(new Error('Canvas not supported'))
+
+  // 预加载猫咪图片
+  const catImageSrc = CAT_IMAGES[result.type]
+  const catImage = catImageSrc ? await loadImage(catImageSrc) : null
 
   // roundRect polyfill
   if (!ctx.roundRect) {
@@ -247,10 +274,36 @@ const generateResultImage = (result: TestResult): Promise<Blob> => {
   ctx.arc(width / 2, y + 45, 60, 0, Math.PI * 2)
   ctx.fill()
 
-  // 绘制猫咪
-  ctx.font = '52px system-ui'
-  ctx.textAlign = 'center'
-  ctx.fillText('🐱', width / 2, y + 55)
+  // 绘制猫咪（使用图片或回退到 emoji）
+  if (catImage) {
+    // 绘制圆形裁剪的图片
+    const catSize = 70
+    const catX = width / 2 - catSize / 2
+    const catY = y + 10
+
+    // 创建圆形裁剪路径
+    ctx.save()
+    ctx.beginPath()
+    ctx.arc(width / 2, catY + catSize / 2, catSize / 2, 0, Math.PI * 2)
+    ctx.closePath()
+    ctx.clip()
+
+    // 绘制图片
+    ctx.drawImage(catImage, catX, catY, catSize, catSize)
+    ctx.restore()
+
+    // 绘制圆形边框
+    ctx.strokeStyle = typeColor + '60'
+    ctx.lineWidth = 3
+    ctx.beginPath()
+    ctx.arc(width / 2, catY + catSize / 2, catSize / 2, 0, Math.PI * 2)
+    ctx.stroke()
+  } else {
+    // 回退到 emoji
+    ctx.font = '52px system-ui'
+    ctx.textAlign = 'center'
+    ctx.fillText('🐱', width / 2, y + 55)
+  }
 
   // 标题
   ctx.fillStyle = '#8B7355'
@@ -737,9 +790,15 @@ const ResultPage = () => {
                 className="absolute inset-0 rounded-full blur-xl scale-150 animate-pulse-soft"
                 style={{ background: `linear-gradient(135deg, ${TYPE_COLORS[result.type]}33, ${TYPE_COLORS[result.type]}22)` }}
               />
-              <div className="relative text-6xl">
-                🐱
-              </div>
+              {CAT_IMAGES[result.type] ? (
+                <img
+                  src={CAT_IMAGES[result.type]}
+                  alt={`${result.type} 猫咪`}
+                  className="relative w-24 h-24 rounded-full object-cover border-4 border-white shadow-lg"
+                />
+              ) : (
+                <div className="relative text-6xl">🐱</div>
+              )}
             </div>
           </motion.div>
 
