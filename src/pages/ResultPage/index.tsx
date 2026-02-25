@@ -215,11 +215,15 @@ const drawRadarChart = (
   ctx.lineWidth = 2.5
   ctx.stroke()
 
-  // 绘制标签（放在八边形的各个顶点外侧）
-  ctx.font = 'bold 16px system-ui, sans-serif'
+  // 绘制标签（简化版，只显示中文）
+  const simpleLabels: Record<string, string> = {
+    E: '外向', I: '内向', S: '务实', N: '好奇',
+    T: '独立', F: '粘人', J: '规律', P: '随性'
+  }
+  ctx.font = 'bold 15px system-ui, sans-serif'
   ctx.textBaseline = 'middle'
   points.forEach(p => {
-    const labelR = radius + 28
+    const labelR = radius + 32
     const lx = cx + Math.cos(p.angle) * labelR
     const ly = cy + Math.sin(p.angle) * labelR
 
@@ -232,8 +236,8 @@ const drawRadarChart = (
       ctx.textAlign = 'right'
     }
 
-    ctx.fillStyle = '#6B635B'
-    ctx.fillText(p.label, lx, ly)
+    ctx.fillStyle = p.color
+    ctx.fillText(simpleLabels[p.label.charAt(0)] || p.label, lx, ly)
   })
 }
 
@@ -296,7 +300,7 @@ const generateResultImage = async (result: TestResult): Promise<Blob> => {
 
   // 预计算内容高度
   const innerCardWidth = contentWidth - cardPadding * 2
-  const descResult = wrapText(result.typeDescription || '', innerCardWidth - 20, 22, 34)
+  const descResult = wrapText(result.typeDescription || '', innerCardWidth, 21, 34)
   const traitsResult = wrapText(result.traits || '', innerCardWidth - 20, 20, 32)
   const suggestionsResult = wrapText(result.suggestions || '', innerCardWidth - 20, 20, 32)
   const traitTagsLayout = calculateTagsLayout(result.traitTags || [], 16, 32, 14, innerCardWidth - 20)
@@ -304,15 +308,15 @@ const generateResultImage = async (result: TestResult): Promise<Blob> => {
 
   // 计算总高度
   let totalHeight = margin * 2
-  totalHeight += 90 // 顶部猫咪区域
-  totalHeight += 120 // MBTI 类型
-  totalHeight += 50 // 类型名称
-  totalHeight += 55 // 昵称徽章
-  totalHeight += 50 // 引用
-  totalHeight += 30 // 间距
-  totalHeight += descResult.height + 30 // 描述
+  totalHeight += 70 // 顶部猫咪区域
+  totalHeight += 100 // MBTI 类型
+  totalHeight += 45 // 类型名称
+  totalHeight += 50 // 昵称徽章
+  totalHeight += 45 // 引用
   totalHeight += 20 // 间距
-  totalHeight += 380 // 雷达图卡片
+  totalHeight += descResult.height + 25 // 描述
+  totalHeight += 25 // 间距
+  totalHeight += 340 // 雷达图卡片
   totalHeight += 20 // 间距
   totalHeight += 70 + DIMENSION_PAIRS.length * 78 // 维度分析卡片
   totalHeight += 20 // 间距
@@ -347,19 +351,19 @@ const generateResultImage = async (result: TestResult): Promise<Blob> => {
   drawGlow(width * 0.8, 500, 200, 'rgba(255, 180, 160, 0.12)')
 
   // === 头部区域：猫咪 + 类型信息 ===
-  let y = margin + 50
+  let y = margin + 30
 
   // 猫咪头像
-  const catSize = 100
+  const catSize = 140
   const catCenterY = y + catSize / 2
 
   // 背景光晕
-  const catGlow = ctx.createRadialGradient(width / 2, catCenterY, 0, width / 2, catCenterY, 75)
+  const catGlow = ctx.createRadialGradient(width / 2, catCenterY, 0, width / 2, catCenterY, 90)
   catGlow.addColorStop(0, typeColor + '30')
   catGlow.addColorStop(1, 'transparent')
   ctx.fillStyle = catGlow
   ctx.beginPath()
-  ctx.arc(width / 2, catCenterY, 75, 0, Math.PI * 2)
+  ctx.arc(width / 2, catCenterY, 90, 0, Math.PI * 2)
   ctx.fill()
 
   // 绘制猫咪图片
@@ -388,51 +392,54 @@ const generateResultImage = async (result: TestResult): Promise<Blob> => {
   }
 
   // 移动到猫咪下方
-  y += catSize + 45
+  y += catSize + 30
 
   // MBTI 类型
   ctx.fillStyle = typeColor
-  ctx.font = 'bold 92px Georgia, serif'
+  ctx.font = 'bold 80px Georgia, serif'
   ctx.textAlign = 'center'
   ctx.textBaseline = 'alphabetic'
   ctx.fillText(result.type, width / 2, y)
-  y += 60
+  y += 50
 
   // 类型名称
   ctx.fillStyle = typeColor
-  ctx.font = '34px system-ui, sans-serif'
+  ctx.font = '32px system-ui, sans-serif'
   ctx.fillText(result.typeName, width / 2, y)
-  y += 55
+  y += 45
 
   // 昵称徽章
-  ctx.font = 'italic 24px system-ui, sans-serif'
+  ctx.font = 'italic 22px system-ui, sans-serif'
   const nicknameText = `「${result.typeNickname}」`
-  const nicknameW = ctx.measureText(nicknameText).width + 56
-  const badgeY = y - 32
+  const nicknameW = ctx.measureText(nicknameText).width + 48
+  const badgeY = y - 28
   ctx.fillStyle = typeColor + '18'
-  roundRect(ctx, width / 2 - nicknameW / 2, badgeY, nicknameW, 50, 25)
+  roundRect(ctx, width / 2 - nicknameW / 2, badgeY, nicknameW, 44, 22)
   ctx.fill()
   ctx.strokeStyle = typeColor + '50'
   ctx.lineWidth = 2
   ctx.stroke()
   ctx.fillStyle = typeColor
-  ctx.fillText(nicknameText, width / 2, y)
-  y += 60
+  ctx.fillText(nicknameText, width / 2, y - 2)
+  y += 50
 
   // 引用
   ctx.fillStyle = '#8B8178'
-  ctx.font = 'italic 22px system-ui, sans-serif'
+  ctx.font = 'italic 20px system-ui, sans-serif'
   ctx.fillText(`"${result.quote}"`, width / 2, y)
-  y += 55
+  y += 45
 
-  // 描述
+  // 描述 - 左对齐更利于阅读
   ctx.fillStyle = '#5C5650'
-  ctx.font = '22px system-ui, sans-serif'
+  ctx.font = '21px system-ui, sans-serif'
+  ctx.textAlign = 'left'
+  const descX = margin + cardPadding
   descResult.lines.forEach(line => {
-    ctx.fillText(line, width / 2, y)
-    y += 36
+    ctx.fillText(line, descX, y)
+    y += 34
   })
-  y += 40
+  y += 35
+  ctx.textAlign = 'center'
 
   // === 绘制卡片辅助函数 ===
   const drawCard = (cardY: number, cardH: number) => {
@@ -453,17 +460,17 @@ const generateResultImage = async (result: TestResult): Promise<Blob> => {
   }
 
   // === 雷达图卡片 ===
-  const radarCardH = 360
+  const radarCardH = 320
   drawCard(y, radarCardH)
 
   // 卡片标题
   ctx.fillStyle = '#4A4540'
-  ctx.font = 'bold 26px system-ui, sans-serif'
+  ctx.font = 'bold 24px system-ui, sans-serif'
   ctx.textAlign = 'left'
-  ctx.fillText('✦ 性格雷达图', margin + cardPadding, y + 45)
+  ctx.fillText('✦ 性格雷达图', margin + cardPadding, y + 40)
 
   // 绘制雷达图
-  drawRadarChart(ctx, width / 2, y + 195, 105, result.allDimensionScores || result.dimensionScores, typeColor)
+  drawRadarChart(ctx, width / 2, y + 175, 95, result.allDimensionScores || result.dimensionScores, typeColor)
 
   y += radarCardH + 20
 
@@ -472,10 +479,10 @@ const generateResultImage = async (result: TestResult): Promise<Blob> => {
   drawCard(y, dimCardH)
 
   ctx.fillStyle = '#4A4540'
-  ctx.font = 'bold 26px system-ui, sans-serif'
-  ctx.fillText('✦ 性格维度', margin + cardPadding, y + 45)
+  ctx.font = 'bold 24px system-ui, sans-serif'
+  ctx.fillText('✦ 性格维度', margin + cardPadding, y + 40)
 
-  let dimY = y + 75
+  let dimY = y + 70
   const labelW = 90
   const barMaxW = innerCardWidth - labelW * 2 - 20
 
@@ -570,7 +577,7 @@ const generateResultImage = async (result: TestResult): Promise<Blob> => {
   ctx.textBaseline = 'alphabetic'
   ctx.fillText('✦ 性格特点', margin + cardPadding, y + 45)
 
-  // 标签
+  // 标签 - 使用类型主题色
   ctx.font = '16px system-ui, sans-serif'
   let tagX = margin + cardPadding
   let tagY = y + 75
@@ -582,14 +589,14 @@ const generateResultImage = async (result: TestResult): Promise<Blob> => {
       tagY += tagH + 8
     }
 
-    ctx.fillStyle = '#FFF5F0'
+    ctx.fillStyle = typeColor + '15'
     roundRect(ctx, tagX, tagY - tagH / 2, tagW, tagH, 16)
     ctx.fill()
-    ctx.strokeStyle = '#E8C4B4'
+    ctx.strokeStyle = typeColor + '40'
     ctx.lineWidth = 1.5
     ctx.stroke()
 
-    ctx.fillStyle = '#C4856A'
+    ctx.fillStyle = typeColor
     ctx.textAlign = 'left'
     ctx.fillText(tag, tagX + 14, tagY + 5)
     tagX += tagW + 8
@@ -615,7 +622,7 @@ const generateResultImage = async (result: TestResult): Promise<Blob> => {
   ctx.font = 'bold 26px system-ui, sans-serif'
   ctx.fillText('✦ 相处建议', margin + cardPadding, y + 45)
 
-  // 标签
+  // 标签 - 使用类型主题色
   ctx.font = '16px system-ui, sans-serif'
   tagX = margin + cardPadding
   tagY = y + 75
@@ -626,14 +633,14 @@ const generateResultImage = async (result: TestResult): Promise<Blob> => {
       tagY += tagH + 8
     }
 
-    ctx.fillStyle = '#F0FDF4'
+    ctx.fillStyle = typeColor + '12'
     roundRect(ctx, tagX, tagY - tagH / 2, tagW, tagH, 16)
     ctx.fill()
-    ctx.strokeStyle = '#B8DBC8'
+    ctx.strokeStyle = typeColor + '35'
     ctx.lineWidth = 1.5
     ctx.stroke()
 
-    ctx.fillStyle = '#5A9A7C'
+    ctx.fillStyle = typeColor
     ctx.fillText(tag, tagX + 14, tagY + 5)
     tagX += tagW + 8
   })
@@ -650,19 +657,21 @@ const generateResultImage = async (result: TestResult): Promise<Blob> => {
   y += suggestionsCardH + 40
 
   // === 底部 ===
-  ctx.strokeStyle = '#D4A574'
-  ctx.lineWidth = 1.5
+  // 装饰线
+  ctx.strokeStyle = typeColor + '50'
+  ctx.lineWidth = 2
   ctx.beginPath()
-  ctx.moveTo(width / 2 - 70, height - margin - 55)
-  ctx.lineTo(width / 2 - 20, height - margin - 55)
-  ctx.moveTo(width / 2 + 20, height - margin - 55)
-  ctx.lineTo(width / 2 + 70, height - margin - 55)
+  ctx.moveTo(width / 2 - 60, height - margin - 50)
+  ctx.lineTo(width / 2 - 15, height - margin - 50)
+  ctx.moveTo(width / 2 + 15, height - margin - 50)
+  ctx.lineTo(width / 2 + 60, height - margin - 50)
   ctx.stroke()
 
-  ctx.fillStyle = '#8B8178'
-  ctx.font = '20px system-ui, sans-serif'
+  // CTA 文字
+  ctx.fillStyle = typeColor
+  ctx.font = 'bold 18px system-ui, sans-serif'
   ctx.textAlign = 'center'
-  ctx.fillText('🐾 你家猫咪的性格是什么呢？快来测测吧！🐾', width / 2, height - margin - 22)
+  ctx.fillText('🐾 测测你家猫咪的 MBTI 性格 🐾', width / 2, height - margin - 22)
 
   // 返回 canvas 的 blob
   return new Promise<Blob>((resolve) => {
