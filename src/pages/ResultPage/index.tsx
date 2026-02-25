@@ -1006,6 +1006,7 @@ const ResultPage = () => {
                   key={`${positive}-${negative}`}
                   leftDimension={pairData.left}
                   rightDimension={pairData.right}
+                  mbtiType={result.type}
                 />
               )
             })}
