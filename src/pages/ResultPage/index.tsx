@@ -39,16 +39,20 @@ const DIMENSION_PAIRS = [
   { positive: 'J', negative: 'P', positiveName: '规律', negativeName: '随性' },
 ]
 
-// 维度颜色
-const DIMENSION_COLORS: Record<string, string> = {
-  E: '#FB923C',
-  I: '#FDA4AF',
-  S: '#22D3EE',
-  N: '#7DD3FC',
-  T: '#34D399',
-  F: '#5EEAD4',
-  J: '#A78BFA',
-  P: '#F0ABFC',
+// 维度颜色 - 同色系深浅配色
+const DIMENSION_COLORS: Record<string, { dark: string; light: string }> = {
+  // E/I - 橙色系
+  E: { dark: '#EA580C', light: '#FDBA74' },
+  I: { dark: '#EA580C', light: '#FDBA74' },
+  // S/N - 蓝色系
+  S: { dark: '#2563EB', light: '#93C5FD' },
+  N: { dark: '#2563EB', light: '#93C5FD' },
+  // T/F - 绿色系
+  T: { dark: '#059669', light: '#6EE7B7' },
+  F: { dark: '#059669', light: '#6EE7B7' },
+  // J/P - 紫色系
+  J: { dark: '#7C3AED', light: '#C4B5FD' },
+  P: { dark: '#7C3AED', light: '#C4B5FD' },
 }
 
 const DIMENSION_LABELS: Record<string, string> = {
@@ -487,6 +491,9 @@ const generateResultImage = async (result: TestResult): Promise<Blob> => {
   const labelW = 90
   const barMaxW = innerCardWidth - labelW * 2 - 20
 
+  // 获取 MBTI 类型，用于判断主导维度
+  const mbtiType = result.type
+
   DIMENSION_PAIRS.forEach(({ positive, negative }) => {
     const allScores = result.allDimensionScores || result.dimensionScores
     const posScore = allScores.find(d => d.dimension === positive)
@@ -501,7 +508,16 @@ const generateResultImage = async (result: TestResult): Promise<Blob> => {
       ? (posScore.dominance || posScore.percentage)
       : (negScore.dominance || negScore.percentage)
 
-    const winningColor = leftIsWinning ? DIMENSION_COLORS[leftDim] : DIMENSION_COLORS[rightDim]
+    // 判断是否是主导维度（包含在 MBTI 类型中）
+    const leftIsDominant = mbtiType?.includes(leftDim) ?? false
+    const rightIsDominant = mbtiType?.includes(rightDim) ?? false
+
+    // 根据是否为主导维度选择深浅色
+    const leftColor = leftIsDominant ? DIMENSION_COLORS[leftDim].dark : DIMENSION_COLORS[leftDim].light
+    const rightColor = rightIsDominant ? DIMENSION_COLORS[rightDim].dark : DIMENSION_COLORS[rightDim].light
+    const winningColor = leftIsWinning
+      ? (leftIsDominant ? DIMENSION_COLORS[leftDim].dark : DIMENSION_COLORS[leftDim].light)
+      : (rightIsDominant ? DIMENSION_COLORS[rightDim].dark : DIMENSION_COLORS[rightDim].light)
     const displayPercent = leftIsWinning ? leftPercent : (100 - leftPercent)
 
     const barX = margin + cardPadding + labelW
@@ -511,7 +527,7 @@ const generateResultImage = async (result: TestResult): Promise<Blob> => {
     const rightW = barMaxW - leftW
 
     // 左侧标签
-    ctx.fillStyle = DIMENSION_COLORS[leftDim]
+    ctx.fillStyle = leftColor
     ctx.font = 'bold 24px system-ui, sans-serif'
     ctx.textAlign = 'left'
     ctx.fillText(leftDim, margin + cardPadding, dimY + 22)
@@ -524,7 +540,7 @@ const generateResultImage = async (result: TestResult): Promise<Blob> => {
     ctx.font = '18px system-ui, sans-serif'
     ctx.textAlign = 'right'
     ctx.fillText(DIMENSION_LABELS[rightDim], margin + cardPadding + innerCardWidth - 30, dimY + 22)
-    ctx.fillStyle = DIMENSION_COLORS[rightDim]
+    ctx.fillStyle = rightColor
     ctx.font = 'bold 24px system-ui, sans-serif'
     ctx.fillText(rightDim, margin + cardPadding + innerCardWidth, dimY + 22)
 
@@ -534,12 +550,12 @@ const generateResultImage = async (result: TestResult): Promise<Blob> => {
     ctx.fill()
 
     // 左侧进度条
-    ctx.fillStyle = DIMENSION_COLORS[leftDim]
+    ctx.fillStyle = leftColor
     roundRect(ctx, barX, barY, leftW, barH, leftW < barMaxW ? [10, 0, 0, 10] : 10)
     ctx.fill()
 
     // 右侧进度条
-    ctx.fillStyle = DIMENSION_COLORS[rightDim]
+    ctx.fillStyle = rightColor
     roundRect(ctx, barX + leftW, barY, rightW, barH, rightW < barMaxW ? [0, 10, 10, 0] : 10)
     ctx.fill()
 
