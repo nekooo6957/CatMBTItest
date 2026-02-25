@@ -308,7 +308,7 @@ const generateResultImage = async (result: TestResult): Promise<Blob> => {
 
   // 计算总高度
   let totalHeight = margin * 2
-  totalHeight += 70 // 顶部猫咪区域
+  totalHeight += 85 // 顶部猫咪区域
   totalHeight += 100 // MBTI 类型
   totalHeight += 45 // 类型名称
   totalHeight += 50 // 昵称徽章
@@ -392,7 +392,7 @@ const generateResultImage = async (result: TestResult): Promise<Blob> => {
   }
 
   // 移动到猫咪下方
-  y += catSize + 30
+  y += catSize + 55
 
   // MBTI 类型
   ctx.fillStyle = typeColor
@@ -480,6 +480,7 @@ const generateResultImage = async (result: TestResult): Promise<Blob> => {
 
   ctx.fillStyle = '#4A4540'
   ctx.font = 'bold 24px system-ui, sans-serif'
+  ctx.textAlign = 'left'
   ctx.fillText('✦ 性格维度', margin + cardPadding, y + 40)
 
   let dimY = y + 70
