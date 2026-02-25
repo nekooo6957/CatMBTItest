@@ -289,9 +289,9 @@ const generateResultImage = async (result: TestResult, catNickname: string): Pro
     }
     if (currentLine) lines.push(currentLine)
 
-    // 首行缩进
+    // 首行缩进两个字符（四个空格）
     if (indent && lines.length > 0 && lines[0]) {
-      lines[0] = '  ' + lines[0]
+      lines[0] = '    ' + lines[0]
     }
 
     return { lines, height: lines.length * lineHeight }
