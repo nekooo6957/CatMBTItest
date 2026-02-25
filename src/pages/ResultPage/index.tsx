@@ -258,23 +258,106 @@ const generateResultImage = async (result: TestResult, catNickname: string): Pro
   const cardPadding = 32  // 卡片内边距也增大
   const contentWidth = width - margin * 2
 
-  // 文字自动换行函数
-  const wrapText = (text: string, maxWidth: number, fontSize: number, lineHeight: number): { lines: string[], height: number } => {
+  // 智能文字换行函数 - 按句子分割，避免标点在行首
+  const wrapText = (text: string, maxWidth: number, fontSize: number, lineHeight: number, indent: boolean = false): { lines: string[], height: number } => {
     const lines: string[] = []
-    let currentLine = ''
     ctx.font = `${fontSize}px system-ui, sans-serif`
 
-    for (const char of text) {
-      const testLine = currentLine + char
-      const metrics = ctx.measureText(testLine)
-      if (metrics.width > maxWidth && currentLine.length > 0) {
-        lines.push(currentLine)
-        currentLine = char
+    // 首先按句子分割（以句号、问号、感叹号、分号分割）
+    const sentences = text.split(/([。？！；\.\?!;])/)
+    let paragraphs: string[] = []
+    let currentParagraph = ''
+
+    // 重新组合句子和标点
+    for (let i = 0; i < sentences.length; i++) {
+      const s = sentences[i]
+      if (!s) continue
+
+      // 如果是标点符号，添加到当前段落
+      if (/^[。？！；\.\?!;]$/.test(s)) {
+        currentParagraph += s
+        // 遇到句号、问号、感叹号结束当前段落
+        if (/[。！？\.?!]$/.test(s)) {
+          if (currentParagraph.trim()) {
+            paragraphs.push(currentParagraph.trim())
+          }
+          currentParagraph = ''
+        }
       } else {
-        currentLine = testLine
+        // 如果是文字内容
+        if (currentParagraph && !/[；;]$/.test(currentParagraph)) {
+          // 当前段落已结束（有句号），开始新段落
+          if (currentParagraph.trim()) {
+            paragraphs.push(currentParagraph.trim())
+          }
+          currentParagraph = s
+        } else {
+          currentParagraph += s
+        }
       }
     }
-    if (currentLine) lines.push(currentLine)
+    // 添加最后剩余的段落
+    if (currentParagraph.trim()) {
+      paragraphs.push(currentParagraph.trim())
+    }
+
+    // 处理每个段落的换行
+    paragraphs.forEach((paragraph, pIndex) => {
+      // 非空段落之间添加空行
+      if (pIndex > 0 && paragraph) {
+        // 检查是否需要在段落间加空行（如果段落较长）
+        if (paragraphs[pIndex - 1].length > 10) {
+          lines.push('')
+        }
+      }
+
+      let currentLine = ''
+      const chars = paragraph.split('')
+
+      for (let i = 0; i < chars.length; i++) {
+        const char = chars[i]
+        const nextChar = chars[i + 1] || ''
+
+        // 检查是否可以在当前字符后断行
+        const canBreakAfter = /[，。！？；：、\.,!?;:\s]$/.test(char)
+        const isPunctuation = /^[，。！？；：、\.,!?;:）」』】》]$/.test(nextChar)
+
+        const testLine = currentLine + char
+        const metrics = ctx.measureText(testLine)
+
+        if (metrics.width > maxWidth && currentLine.length > 0) {
+          // 如果可以断行，尝试将前面的内容移到下一行
+          if (canBreakAfter || currentLine.length < 5) {
+            lines.push(currentLine)
+            currentLine = char
+          } else {
+            // 寻找可断行的位置
+            let breakPos = currentLine.length - 1
+            while (breakPos > 0 && !/[，。！？；：、\.,!?;:\s]/.test(currentLine[breakPos])) {
+              breakPos--
+            }
+            if (breakPos > 0) {
+              lines.push(currentLine.slice(0, breakPos + 1))
+              currentLine = currentLine.slice(breakPos + 1) + char
+            } else {
+              lines.push(currentLine)
+              currentLine = char
+            }
+          }
+        } else {
+          currentLine = testLine
+        }
+      }
+
+      if (currentLine) {
+        lines.push(currentLine)
+      }
+    })
+
+    // 添加首行缩进
+    if (indent && lines.length > 0 && lines[0]) {
+      lines[0] = '  ' + lines[0]
+    }
 
     return { lines, height: lines.length * lineHeight }
   }
@@ -302,9 +385,9 @@ const generateResultImage = async (result: TestResult, catNickname: string): Pro
 
   // 预计算内容高度
   const innerCardWidth = contentWidth - cardPadding * 2
-  const descResult = wrapText(result.typeDescription || '', innerCardWidth, 21, 34)
-  const traitsResult = wrapText(result.traits || '', innerCardWidth - 20, 20, 32)
-  const suggestionsResult = wrapText(result.suggestions || '', innerCardWidth - 20, 20, 32)
+  const descResult = wrapText(result.typeDescription || '', innerCardWidth, 21, 34, false)
+  const traitsResult = wrapText(result.traits || '', innerCardWidth - 20, 20, 32, true)
+  const suggestionsResult = wrapText(result.suggestions || '', innerCardWidth - 20, 20, 32, true)
   const traitTagsLayout = calculateTagsLayout(result.traitTags || [], 16, 32, 14, innerCardWidth - 20)
   const suggestionTagsLayout = calculateTagsLayout(result.suggestionTags || [], 16, 32, 14, innerCardWidth - 20)
 
@@ -442,17 +525,17 @@ const generateResultImage = async (result: TestResult, catNickname: string): Pro
   ctx.fillText(`"${result.quote}"`, width / 2, y)
   y += 45
 
-  // 描述 - 左对齐更利于阅读
+  // 描述 - 居中对齐
   ctx.fillStyle = '#5C5650'
   ctx.font = '21px system-ui, sans-serif'
-  ctx.textAlign = 'left'
-  const descX = margin + cardPadding
+  ctx.textAlign = 'center'
   descResult.lines.forEach(line => {
-    ctx.fillText(line, descX, y)
+    if (line) {
+      ctx.fillText(line, width / 2, y)
+    }
     y += 34
   })
   y += 35
-  ctx.textAlign = 'center'
 
   // === 绘制卡片辅助函数 ===
   const drawCard = (cardY: number, cardH: number) => {
@@ -1013,7 +1096,7 @@ const ResultPage = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.6 }}
-            className="text-gray-600 text-sm leading-relaxed max-w-md mx-auto"
+            className="text-gray-600 text-sm leading-relaxed max-w-md mx-auto text-center"
           >
             {result.typeDescription}
           </motion.p>
