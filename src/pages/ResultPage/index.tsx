@@ -308,7 +308,7 @@ const generateResultImage = async (result: TestResult): Promise<Blob> => {
 
   // 计算总高度
   let totalHeight = margin * 2
-  totalHeight += 85 // 顶部猫咪区域
+  totalHeight += 100 // 顶部猫咪区域
   totalHeight += 100 // MBTI 类型
   totalHeight += 45 // 类型名称
   totalHeight += 50 // 昵称徽章
@@ -392,7 +392,7 @@ const generateResultImage = async (result: TestResult): Promise<Blob> => {
   }
 
   // 移动到猫咪下方
-  y += catSize + 55
+  y += catSize + 70
 
   // MBTI 类型
   ctx.fillStyle = typeColor
