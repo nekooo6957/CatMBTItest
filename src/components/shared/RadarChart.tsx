@@ -24,19 +24,19 @@ const DIMENSION_LABELS: Record<string, string> = {
   P: '随性P',
 }
 
-// 维度颜色映射 - 莫兰迪色调
+// 维度颜色映射 - 温暖奶油色调（适中饱和度）
 const getDimensionColor = (dim: string): string => {
   const colors: Record<string, string> = {
-    E: '#C4A484', // 莫兰迪橙
-    I: '#E8D4C4', // 莫兰迪浅橙
-    S: '#8FA5B8', // 莫兰迪蓝
-    N: '#C8D4E0', // 莫兰迪浅蓝
-    T: '#8FB8A8', // 莫兰迪绿
-    F: '#C8E0D8', // 莫兰迪浅绿
-    J: '#A898B8', // 莫兰迪紫
-    P: '#D8D0E0', // 莫兰迪浅紫
+    E: '#E8927C', // 温暖珊瑚橙
+    I: '#F5C4A0', // 柔和奶油橙
+    S: '#6BB5A0', // 清澈薄荷绿
+    N: '#A8D8C8', // 淡雅薄荷
+    T: '#5A9BC8', // 舒适天空蓝
+    F: '#9CC8E8', // 柔和天蓝
+    J: '#9B8DC7', // 温柔紫罗兰
+    P: '#C8BFE8', // 淡雅薰衣草
   }
-  return colors[dim] || '#C4A484'
+  return colors[dim] || '#E8927C'
 }
 
 export const RadarChart = ({ data, typeColor = '#FF8C6B' }: RadarChartProps) => {
@@ -73,21 +73,21 @@ export const RadarChart = ({ data, typeColor = '#FF8C6B' }: RadarChartProps) => 
             </filter>
           </defs>
           <PolarGrid
-            stroke="#E8DDD4"
+            stroke="#E8E0D8"
             strokeWidth={1}
             radialLines={true}
           />
           <PolarAngleAxis
             dataKey="dimension"
-            tick={{ fill: '#6B635B', fontSize: 11, fontWeight: 500 }}
+            tick={{ fill: '#7A7268', fontSize: 11, fontWeight: 500 }}
             tickLine={false}
           />
           <PolarRadiusAxis
             angle={22.5}
             domain={[0, 100]}
-            tick={{ fill: '#A8A098', fontSize: 9 }}
+            tick={{ fill: '#A09890', fontSize: 9 }}
             tickCount={4}
-            axisLine={{ stroke: '#E8DDD4' }}
+            axisLine={{ stroke: '#E8E0D8' }}
           />
           <Radar
             name="得分"

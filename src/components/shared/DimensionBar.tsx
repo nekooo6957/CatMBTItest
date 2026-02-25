@@ -6,20 +6,20 @@ interface DimensionBarProps {
   mbtiType?: string // 用于判断主导维度
 }
 
-// 莫兰迪色调 - 低饱和度，柔和舒适
+// 温暖奶油色调 - 适中饱和度，舒适不刺眼
 const DIMENSION_COLORS: Record<string, { dark: string; light: string; darkHex: string; lightHex: string }> = {
-  // E/I - 莫兰迪橙/赭石色
-  E: { dark: 'bg-gradient-to-r from-[#C4A484] to-[#D4B494]', light: 'bg-gradient-to-r from-[#E8D4C4] to-[#F0E0D0]', darkHex: '#C4A484', lightHex: '#E8D4C4' },
-  I: { dark: 'bg-gradient-to-r from-[#C4A484] to-[#D4B494]', light: 'bg-gradient-to-r from-[#E8D4C4] to-[#F0E0D0]', darkHex: '#C4A484', lightHex: '#E8D4C4' },
-  // S/N - 莫兰迪蓝/灰蓝色
-  S: { dark: 'bg-gradient-to-r from-[#8FA5B8] to-[#A0B5C8]', light: 'bg-gradient-to-r from-[#C8D4E0] to-[#D8E4F0]', darkHex: '#8FA5B8', lightHex: '#C8D4E0' },
-  N: { dark: 'bg-gradient-to-r from-[#8FA5B8] to-[#A0B5C8]', light: 'bg-gradient-to-r from-[#C8D4E0] to-[#D8E4F0]', darkHex: '#8FA5B8', lightHex: '#C8D4E0' },
-  // T/F - 莫兰迪绿/灰绿色
-  T: { dark: 'bg-gradient-to-r from-[#8FB8A8] to-[#A0C8B8]', light: 'bg-gradient-to-r from-[#C8E0D8] to-[#D8F0E8]', darkHex: '#8FB8A8', lightHex: '#C8E0D8' },
-  F: { dark: 'bg-gradient-to-r from-[#8FB8A8] to-[#A0C8B8]', light: 'bg-gradient-to-r from-[#C8E0D8] to-[#D8F0E8]', darkHex: '#8FB8A8', lightHex: '#C8E0D8' },
-  // J/P - 莫兰迪紫/灰紫色
-  J: { dark: 'bg-gradient-to-r from-[#A898B8] to-[#B8A8C8]', light: 'bg-gradient-to-r from-[#D8D0E0] to-[#E8E0F0]', darkHex: '#A898B8', lightHex: '#D8D0E0' },
-  P: { dark: 'bg-gradient-to-r from-[#A898B8] to-[#B8A8C8]', light: 'bg-gradient-to-r from-[#D8D0E0] to-[#E8E0F0]', darkHex: '#A898B8', lightHex: '#D8D0E0' },
+  // E/I - 温暖珊瑚橙/奶油橙
+  E: { dark: 'bg-gradient-to-r from-[#E8927C] to-[#F0A090]', light: 'bg-gradient-to-r from-[#F5C4A0] to-[#FAD8B8]', darkHex: '#E8927C', lightHex: '#F5C4A0' },
+  I: { dark: 'bg-gradient-to-r from-[#E8927C] to-[#F0A090]', light: 'bg-gradient-to-r from-[#F5C4A0] to-[#FAD8B8]', darkHex: '#E8927C', lightHex: '#F5C4A0' },
+  // S/N - 清澈薄荷绿/淡雅薄荷
+  S: { dark: 'bg-gradient-to-r from-[#6BB5A0] to-[#7CC5B0]', light: 'bg-gradient-to-r from-[#A8D8C8] to-[#B8E8D8]', darkHex: '#6BB5A0', lightHex: '#A8D8C8' },
+  N: { dark: 'bg-gradient-to-r from-[#6BB5A0] to-[#7CC5B0]', light: 'bg-gradient-to-r from-[#A8D8C8] to-[#B8E8D8]', darkHex: '#6BB5A0', lightHex: '#A8D8C8' },
+  // T/F - 舒适天空蓝/柔和天蓝
+  T: { dark: 'bg-gradient-to-r from-[#5A9BC8] to-[#6AABD8]', light: 'bg-gradient-to-r from-[#9CC8E8] to-[#B8D8F0]', darkHex: '#5A9BC8', lightHex: '#9CC8E8' },
+  F: { dark: 'bg-gradient-to-r from-[#5A9BC8] to-[#6AABD8]', light: 'bg-gradient-to-r from-[#9CC8E8] to-[#B8D8F0]', darkHex: '#5A9BC8', lightHex: '#9CC8E8' },
+  // J/P - 温柔紫罗兰/淡雅薰衣草
+  J: { dark: 'bg-gradient-to-r from-[#9B8DC7] to-[#AB9DD7]', light: 'bg-gradient-to-r from-[#C8BFE8] to-[#D8D0F0]', darkHex: '#9B8DC7', lightHex: '#C8BFE8' },
+  P: { dark: 'bg-gradient-to-r from-[#9B8DC7] to-[#AB9DD7]', light: 'bg-gradient-to-r from-[#C8BFE8] to-[#D8D0F0]', darkHex: '#9B8DC7', lightHex: '#C8BFE8' },
 }
 
 const DIMENSION_LABELS: Record<string, string> = {
@@ -33,16 +33,16 @@ const DIMENSION_LABELS: Record<string, string> = {
   P: '随性',
 }
 
-// 维度文字颜色 - 莫兰迪色调
+// 维度文字颜色 - 温暖奶油色调
 const DIMENSION_TEXT_COLORS: Record<string, string> = {
-  E: 'text-[#B09070]',
-  I: 'text-[#C4A484]',
-  S: 'text-[#7F95A8]',
-  N: 'text-[#8FA5B8]',
-  T: 'text-[#7FA898]',
-  F: 'text-[#8FB8A8]',
-  J: 'text-[#9888A8]',
-  P: 'text-[#A898B8]',
+  E: 'text-[#D07058]',
+  I: 'text-[#E8927C]',
+  S: 'text-[#4A9580]',
+  N: 'text-[#6BB5A0]',
+  T: 'text-[#3A7BA8]',
+  F: 'text-[#5A9BC8]',
+  J: 'text-[#7B6DA7]',
+  P: 'text-[#9B8DC7]',
 }
 
 export const DimensionBar = ({ leftDimension, rightDimension, mbtiType }: DimensionBarProps) => {
