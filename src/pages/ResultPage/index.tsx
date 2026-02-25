@@ -258,101 +258,38 @@ const generateResultImage = async (result: TestResult, catNickname: string): Pro
   const cardPadding = 32  // 卡片内边距也增大
   const contentWidth = width - margin * 2
 
-  // 智能文字换行函数 - 按句子分割，避免标点在行首
+  // 文字换行函数 - 避免标点在行首，支持首行缩进
   const wrapText = (text: string, maxWidth: number, fontSize: number, lineHeight: number, indent: boolean = false): { lines: string[], height: number } => {
     const lines: string[] = []
+    let currentLine = ''
     ctx.font = `${fontSize}px system-ui, sans-serif`
 
-    // 首先按句子分割（以句号、问号、感叹号、分号分割）
-    const sentences = text.split(/([。？！；\.\?!;])/)
-    let paragraphs: string[] = []
-    let currentParagraph = ''
+    // 避免在行首的标点符号
+    const startPunctuation = /^[，。！？；：、\.,!?;:）」』】》\s]/
 
-    // 重新组合句子和标点
-    for (let i = 0; i < sentences.length; i++) {
-      const s = sentences[i]
-      if (!s) continue
+    for (let i = 0; i < text.length; i++) {
+      const char = text[i]
+      const testLine = currentLine + char
+      const metrics = ctx.measureText(testLine)
 
-      // 如果是标点符号，添加到当前段落
-      if (/^[。？！；\.\?!;]$/.test(s)) {
-        currentParagraph += s
-        // 遇到句号、问号、感叹号结束当前段落
-        if (/[。！？\.?!]$/.test(s)) {
-          if (currentParagraph.trim()) {
-            paragraphs.push(currentParagraph.trim())
-          }
-          currentParagraph = ''
+      if (metrics.width > maxWidth && currentLine.length > 0) {
+        // 如果下一个字符是标点，尝试把这个标点和前面的字一起移到下一行
+        if (startPunctuation.test(char) && currentLine.length > 1) {
+          // 找到倒数第二个字的位置
+          const lastChar = currentLine[currentLine.length - 1]
+          lines.push(currentLine.slice(0, -1))
+          currentLine = lastChar + char
+        } else {
+          lines.push(currentLine)
+          currentLine = char
         }
       } else {
-        // 如果是文字内容
-        if (currentParagraph && !/[；;]$/.test(currentParagraph)) {
-          // 当前段落已结束（有句号），开始新段落
-          if (currentParagraph.trim()) {
-            paragraphs.push(currentParagraph.trim())
-          }
-          currentParagraph = s
-        } else {
-          currentParagraph += s
-        }
+        currentLine = testLine
       }
     }
-    // 添加最后剩余的段落
-    if (currentParagraph.trim()) {
-      paragraphs.push(currentParagraph.trim())
-    }
+    if (currentLine) lines.push(currentLine)
 
-    // 处理每个段落的换行
-    paragraphs.forEach((paragraph, pIndex) => {
-      // 非空段落之间添加空行
-      if (pIndex > 0 && paragraph) {
-        // 检查是否需要在段落间加空行（如果段落较长）
-        if (paragraphs[pIndex - 1].length > 10) {
-          lines.push('')
-        }
-      }
-
-      let currentLine = ''
-      const chars = paragraph.split('')
-
-      for (let i = 0; i < chars.length; i++) {
-        const char = chars[i]
-
-        // 检查是否可以在当前字符后断行
-        const canBreakAfter = /[，。！？；：、\.,!?;:\s]$/.test(char)
-
-        const testLine = currentLine + char
-        const metrics = ctx.measureText(testLine)
-
-        if (metrics.width > maxWidth && currentLine.length > 0) {
-          // 如果可以断行，尝试将前面的内容移到下一行
-          if (canBreakAfter || currentLine.length < 5) {
-            lines.push(currentLine)
-            currentLine = char
-          } else {
-            // 寻找可断行的位置
-            let breakPos = currentLine.length - 1
-            while (breakPos > 0 && !/[，。！？；：、\.,!?;:\s]/.test(currentLine[breakPos])) {
-              breakPos--
-            }
-            if (breakPos > 0) {
-              lines.push(currentLine.slice(0, breakPos + 1))
-              currentLine = currentLine.slice(breakPos + 1) + char
-            } else {
-              lines.push(currentLine)
-              currentLine = char
-            }
-          }
-        } else {
-          currentLine = testLine
-        }
-      }
-
-      if (currentLine) {
-        lines.push(currentLine)
-      }
-    })
-
-    // 添加首行缩进
+    // 首行缩进
     if (indent && lines.length > 0 && lines[0]) {
       lines[0] = '  ' + lines[0]
     }
