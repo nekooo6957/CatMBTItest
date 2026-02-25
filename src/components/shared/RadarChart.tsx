@@ -53,17 +53,7 @@ export const RadarChart = ({ data, typeColor = '#FF8C6B' }: RadarChartProps) => 
     }
   })
 
-  // 根据 typeColor 生成渐变色
-  const getGradientColors = (baseColor: string) => {
-    // 简单的颜色变亮/变暗处理
-    return {
-      start: baseColor,
-      middle: baseColor + '80', // 50% 透明度
-      end: baseColor + '60', // 38% 透明度
-    }
-  }
-
-  const gradientColors = getGradientColors(typeColor)
+  // 生成唯一的 gradient id
   const gradientId = `radarGradient-${typeColor.replace('#', '')}`
   const filterId = `radarGlow-${typeColor.replace('#', '')}`
 
