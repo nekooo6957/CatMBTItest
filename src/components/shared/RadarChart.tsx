@@ -10,6 +10,7 @@ import { DimensionScore } from '@/types'
 
 interface RadarChartProps {
   data: DimensionScore[]
+  typeColor?: string // MBTI 类型主题色
 }
 
 const DIMENSION_LABELS: Record<string, string> = {
@@ -38,7 +39,7 @@ const getDimensionColor = (dim: string): string => {
   return colors[dim] || '#F97316'
 }
 
-export const RadarChart = ({ data }: RadarChartProps) => {
+export const RadarChart = ({ data, typeColor = '#FF8C6B' }: RadarChartProps) => {
   // 按固定顺序排列维度
   const orderedDimensions = ['E', 'I', 'S', 'N', 'T', 'F', 'J', 'P']
   const chartData = orderedDimensions.map(dim => {
@@ -52,17 +53,31 @@ export const RadarChart = ({ data }: RadarChartProps) => {
     }
   })
 
+  // 根据 typeColor 生成渐变色
+  const getGradientColors = (baseColor: string) => {
+    // 简单的颜色变亮/变暗处理
+    return {
+      start: baseColor,
+      middle: baseColor + '80', // 50% 透明度
+      end: baseColor + '60', // 38% 透明度
+    }
+  }
+
+  const gradientColors = getGradientColors(typeColor)
+  const gradientId = `radarGradient-${typeColor.replace('#', '')}`
+  const filterId = `radarGlow-${typeColor.replace('#', '')}`
+
   return (
     <div className="w-full h-72">
       <ResponsiveContainer width="100%" height="100%">
         <RechartsRadarChart cx="50%" cy="50%" outerRadius="65%" data={chartData}>
           <defs>
-            <linearGradient id="radarGradientFill" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stopColor="#FF8C6B" stopOpacity={0.4} />
-              <stop offset="50%" stopColor="#FFB4A2" stopOpacity={0.3} />
-              <stop offset="100%" stopColor="#E5989B" stopOpacity={0.4} />
+            <linearGradient id={gradientId} x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stopColor={typeColor} stopOpacity={0.5} />
+              <stop offset="50%" stopColor={typeColor} stopOpacity={0.35} />
+              <stop offset="100%" stopColor={typeColor} stopOpacity={0.5} />
             </linearGradient>
-            <filter id="radarGlow" x="-50%" y="-50%" width="200%" height="200%">
+            <filter id={filterId} x="-50%" y="-50%" width="200%" height="200%">
               <feGaussianBlur stdDeviation="2" result="blur" />
               <feComposite in="SourceGraphic" in2="blur" operator="over" />
             </filter>
@@ -87,11 +102,11 @@ export const RadarChart = ({ data }: RadarChartProps) => {
           <Radar
             name="得分"
             dataKey="percentage"
-            stroke="#FF8C6B"
-            fill="url(#radarGradientFill)"
+            stroke={typeColor}
+            fill={`url(#${gradientId})`}
             fillOpacity={0.8}
             strokeWidth={2.5}
-            filter="url(#radarGlow)"
+            filter={`url(#${filterId})`}
           />
         </RechartsRadarChart>
       </ResponsiveContainer>

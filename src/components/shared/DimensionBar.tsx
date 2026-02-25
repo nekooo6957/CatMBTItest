@@ -5,20 +5,20 @@ interface DimensionBarProps {
   rightDimension: DimensionScore
 }
 
-// 更美观的颜色方案 - 使用柔和的渐变色系
+// 更鲜明的颜色方案 - 高对比度渐变色系
 const DIMENSION_COLORS: Record<string, { bg: string; text: string; hex: string }> = {
-  // E/I - 珊瑚橙/暖粉
-  E: { bg: 'bg-gradient-to-r from-orange-400 to-rose-400', text: 'text-orange-500', hex: '#FB923C' },
-  I: { bg: 'bg-gradient-to-r from-rose-300 to-pink-300', text: 'text-rose-400', hex: '#FDA4AF' },
+  // E/I - 珊瑚橙/暖粉 - 更鲜明的颜色
+  E: { bg: 'bg-gradient-to-r from-orange-500 to-orange-400', text: 'text-orange-600', hex: '#F97316' },
+  I: { bg: 'bg-gradient-to-r from-rose-400 to-rose-500', text: 'text-rose-500', hex: '#F43F5E' },
   // S/N - 海洋蓝/天蓝
-  S: { bg: 'bg-gradient-to-r from-cyan-400 to-blue-400', text: 'text-cyan-500', hex: '#22D3EE' },
-  N: { bg: 'bg-gradient-to-r from-sky-300 to-indigo-300', text: 'text-sky-400', hex: '#7DD3FC' },
+  S: { bg: 'bg-gradient-to-r from-cyan-500 to-sky-500', text: 'text-cyan-600', hex: '#06B6D4' },
+  N: { bg: 'bg-gradient-to-r from-blue-500 to-indigo-500', text: 'text-blue-600', hex: '#3B82F6' },
   // T/F - 森林绿/薄荷绿
-  T: { bg: 'bg-gradient-to-r from-emerald-400 to-teal-400', text: 'text-emerald-500', hex: '#34D399' },
-  F: { bg: 'bg-gradient-to-r from-teal-300 to-cyan-300', text: 'text-teal-400', hex: '#5EEAD4' },
+  T: { bg: 'bg-gradient-to-r from-emerald-500 to-teal-500', text: 'text-emerald-600', hex: '#10B981' },
+  F: { bg: 'bg-gradient-to-r from-teal-400 to-cyan-500', text: 'text-teal-600', hex: '#14B8A6' },
   // J/P - 紫罗兰/淡紫
-  J: { bg: 'bg-gradient-to-r from-violet-400 to-purple-400', text: 'text-violet-500', hex: '#A78BFA' },
-  P: { bg: 'bg-gradient-to-r from-fuchsia-300 to-pink-300', text: 'text-fuchsia-400', hex: '#F0ABFC' },
+  J: { bg: 'bg-gradient-to-r from-violet-500 to-purple-500', text: 'text-violet-600', hex: '#8B5CF6' },
+  P: { bg: 'bg-gradient-to-r from-fuchsia-500 to-pink-500', text: 'text-fuchsia-600', hex: '#D946EF' },
 }
 
 const DIMENSION_LABELS: Record<string, string> = {

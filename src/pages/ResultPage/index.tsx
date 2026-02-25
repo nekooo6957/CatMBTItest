@@ -857,6 +857,9 @@ const ResultPage = () => {
     )
   }
 
+  // 获取当前类型的主题色
+  const typeColor = TYPE_COLORS[result.type] || '#FF8C6B'
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-cream via-white to-peach/20 pb-28 relative overflow-hidden">
       {/* 装饰背景 */}
@@ -980,7 +983,7 @@ const ResultPage = () => {
             性格雷达图
             <span className="w-8 h-px bg-gradient-to-l from-transparent to-gray-300" />
           </h2>
-          <RadarChart data={result.allDimensionScores || result.dimensionScores} />
+          <RadarChart data={result.allDimensionScores || result.dimensionScores} typeColor={typeColor} />
         </motion.div>
 
         {/* 维度分析 */}
