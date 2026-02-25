@@ -563,10 +563,10 @@ const generateResultImage = async (result: TestResult): Promise<Blob> => {
     roundRect(ctx, barX + leftW, barY, rightW, barH, rightW < barMaxW ? [0, 10, 10, 0] : 10)
     ctx.fill()
 
-    // 中间圆圈
+    // 中间圆圈（与 DimensionBar 组件一致：w-8 h-8 = 32px）
     const circleX = barX + leftW
     const circleY = barY + barH / 2
-    const circleR = 26
+    const circleR = 16
 
     ctx.fillStyle = '#FFFFFF'
     ctx.beginPath()
@@ -574,11 +574,11 @@ const generateResultImage = async (result: TestResult): Promise<Blob> => {
     ctx.fill()
 
     ctx.strokeStyle = winningColor
-    ctx.lineWidth = 3
+    ctx.lineWidth = 2
     ctx.stroke()
 
     ctx.fillStyle = winningColor
-    ctx.font = 'bold 15px system-ui, sans-serif'
+    ctx.font = 'bold 12px system-ui, sans-serif'
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
     ctx.fillText(`${displayPercent}%`, circleX, circleY)
