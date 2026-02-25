@@ -8,7 +8,7 @@ import { ProgressBar } from '@/components/ui/ProgressBar'
 const TestPage = () => {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
-  const { currentQuestionIndex, questions, answers, answerQuestion, goBack, setCatNickname, catNickname } = useTestStore()
+  const { currentQuestionIndex, questions, answers, answerQuestion, goBack, setCatNickname } = useTestStore()
   const progress = useProgress()
   const [showNicknameModal, setShowNicknameModal] = useState(false)
   const [nicknameInput, setNicknameInput] = useState('')
