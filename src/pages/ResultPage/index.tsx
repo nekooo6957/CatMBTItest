@@ -310,9 +310,9 @@ const generateResultImage = async (result: TestResult, catNickname: string): Pro
 
   // 计算总高度
   let totalHeight = margin * 2
-  totalHeight += 50 // 猫咪昵称标题（顶部）
+  totalHeight += 55 // 猫咪昵称标题（顶部）
   totalHeight += 140 // 猫咪头像
-  totalHeight += 60 // 猫咪下方间距
+  totalHeight += 80 // 猫咪下方间距
   totalHeight += 100 // MBTI 类型
   totalHeight += 45 // 类型名称
   totalHeight += 50 // 昵称徽章
@@ -357,14 +357,14 @@ const generateResultImage = async (result: TestResult, catNickname: string): Pro
   // === 头部区域：昵称标题 + 猫咪 + 类型信息 ===
   let y = margin + 40
 
-  // 猫咪昵称标题（放在最上面）
-  ctx.fillStyle = '#8B8178'
-  ctx.font = '24px system-ui, sans-serif'
+  // 猫咪昵称标题（放在最上面，使用主题色）
+  ctx.fillStyle = typeColor
+  ctx.font = '500 24px system-ui, sans-serif'
   ctx.textAlign = 'center'
   ctx.textBaseline = 'alphabetic'
   const displayNickname = catNickname || '我家猫咪'
   ctx.fillText(`🐾 ${displayNickname}的MBTI报告 🐾`, width / 2, y)
-  y += 50
+  y += 55
 
   // 猫咪头像
   const catSize = 140
@@ -404,8 +404,8 @@ const generateResultImage = async (result: TestResult, catNickname: string): Pro
     ctx.fillText('🐱', width / 2, catCenterY)
   }
 
-  // 移动到猫咪下方
-  y += catSize + 60
+  // 移动到猫咪下方（增加间距）
+  y += catSize + 80
 
   // MBTI 类型
   ctx.fillStyle = typeColor
