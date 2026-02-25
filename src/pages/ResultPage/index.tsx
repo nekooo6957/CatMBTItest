@@ -566,7 +566,7 @@ const generateResultImage = async (result: TestResult): Promise<Blob> => {
     // 中间圆圈（与 DimensionBar 组件一致：w-8 h-8 = 32px）
     const circleX = barX + leftW
     const circleY = barY + barH / 2
-    const circleR = 16
+    const circleR = 20
 
     ctx.fillStyle = '#FFFFFF'
     ctx.beginPath()
