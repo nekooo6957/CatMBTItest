@@ -24,19 +24,19 @@ const DIMENSION_LABELS: Record<string, string> = {
   P: '随性P',
 }
 
-// 维度颜色映射
+// 维度颜色映射 - 莫兰迪色调
 const getDimensionColor = (dim: string): string => {
   const colors: Record<string, string> = {
-    E: '#FB923C',
-    I: '#FDA4AF',
-    S: '#22D3EE',
-    N: '#7DD3FC',
-    T: '#34D399',
-    F: '#5EEAD4',
-    J: '#A78BFA',
-    P: '#F0ABFC',
+    E: '#C4A484', // 莫兰迪橙
+    I: '#E8D4C4', // 莫兰迪浅橙
+    S: '#8FA5B8', // 莫兰迪蓝
+    N: '#C8D4E0', // 莫兰迪浅蓝
+    T: '#8FB8A8', // 莫兰迪绿
+    F: '#C8E0D8', // 莫兰迪浅绿
+    J: '#A898B8', // 莫兰迪紫
+    P: '#D8D0E0', // 莫兰迪浅紫
   }
-  return colors[dim] || '#F97316'
+  return colors[dim] || '#C4A484'
 }
 
 export const RadarChart = ({ data, typeColor = '#FF8C6B' }: RadarChartProps) => {

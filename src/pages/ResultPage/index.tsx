@@ -39,20 +39,20 @@ const DIMENSION_PAIRS = [
   { positive: 'J', negative: 'P', positiveName: '规律', negativeName: '随性' },
 ]
 
-// 维度颜色 - 同色系深浅配色
+// 维度颜色 - 莫兰迪色调，低饱和度
 const DIMENSION_COLORS: Record<string, { dark: string; light: string }> = {
-  // E/I - 橙色系
-  E: { dark: '#EA580C', light: '#FDBA74' },
-  I: { dark: '#EA580C', light: '#FDBA74' },
-  // S/N - 蓝色系
-  S: { dark: '#2563EB', light: '#93C5FD' },
-  N: { dark: '#2563EB', light: '#93C5FD' },
-  // T/F - 绿色系
-  T: { dark: '#059669', light: '#6EE7B7' },
-  F: { dark: '#059669', light: '#6EE7B7' },
-  // J/P - 紫色系
-  J: { dark: '#7C3AED', light: '#C4B5FD' },
-  P: { dark: '#7C3AED', light: '#C4B5FD' },
+  // E/I - 莫兰迪橙/赭石色
+  E: { dark: '#C4A484', light: '#E8D4C4' },
+  I: { dark: '#C4A484', light: '#E8D4C4' },
+  // S/N - 莫兰迪蓝/灰蓝色
+  S: { dark: '#8FA5B8', light: '#C8D4E0' },
+  N: { dark: '#8FA5B8', light: '#C8D4E0' },
+  // T/F - 莫兰迪绿/灰绿色
+  T: { dark: '#8FB8A8', light: '#C8E0D8' },
+  F: { dark: '#8FB8A8', light: '#C8E0D8' },
+  // J/P - 莫兰迪紫/灰紫色
+  J: { dark: '#A898B8', light: '#D8D0E0' },
+  P: { dark: '#A898B8', light: '#D8D0E0' },
 }
 
 const DIMENSION_LABELS: Record<string, string> = {
@@ -148,9 +148,10 @@ const drawRadarChart = (
     E: '外向E', I: '内向I', S: '务实S', N: '好奇N',
     T: '独立T', F: '粘人F', J: '规律J', P: '随性P'
   }
+  // 莫兰迪色调
   const dimColors: Record<string, string> = {
-    E: '#FB923C', I: '#FDA4AF', S: '#22D3EE', N: '#7DD3FC',
-    T: '#34D399', F: '#5EEAD4', J: '#A78BFA', P: '#F0ABFC'
+    E: '#C4A484', I: '#E8D4C4', S: '#8FA5B8', N: '#C8D4E0',
+    T: '#8FB8A8', F: '#C8E0D8', J: '#A898B8', P: '#D8D0E0'
   }
 
   const angleStep = (Math.PI * 2) / dimensions.length
