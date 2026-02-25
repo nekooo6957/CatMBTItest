@@ -316,11 +316,9 @@ const generateResultImage = async (result: TestResult, catNickname: string): Pro
 
       for (let i = 0; i < chars.length; i++) {
         const char = chars[i]
-        const nextChar = chars[i + 1] || ''
 
         // 检查是否可以在当前字符后断行
         const canBreakAfter = /[，。！？；：、\.,!?;:\s]$/.test(char)
-        const isPunctuation = /^[，。！？；：、\.,!?;:）」』】》]$/.test(nextChar)
 
         const testLine = currentLine + char
         const metrics = ctx.measureText(testLine)
