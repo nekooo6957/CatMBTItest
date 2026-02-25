@@ -244,7 +244,7 @@ const drawRadarChart = (
 }
 
 // 生成结果图片 - 与结果页一致的卡片式布局
-const generateResultImage = async (result: TestResult): Promise<Blob> => {
+const generateResultImage = async (result: TestResult, catNickname: string): Promise<Blob> => {
   const canvas = document.createElement('canvas')
   const ctx = canvas.getContext('2d')
   if (!ctx) return Promise.reject(new Error('Canvas not supported'))
@@ -311,6 +311,7 @@ const generateResultImage = async (result: TestResult): Promise<Blob> => {
   // 计算总高度
   let totalHeight = margin * 2
   totalHeight += 100 // 顶部猫咪区域
+  totalHeight += 40 // 猫咪昵称标题
   totalHeight += 100 // MBTI 类型
   totalHeight += 45 // 类型名称
   totalHeight += 50 // 昵称徽章
@@ -395,6 +396,15 @@ const generateResultImage = async (result: TestResult): Promise<Blob> => {
 
   // 移动到猫咪下方
   y += catSize + 70
+
+  // 猫咪昵称标题
+  ctx.fillStyle = '#8B8178'
+  ctx.font = '24px system-ui, sans-serif'
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'alphabetic'
+  const displayNickname = catNickname || '我家猫咪'
+  ctx.fillText(`🐾 ${displayNickname}的MBTI报告 🐾`, width / 2, y)
+  y += 40
 
   // MBTI 类型
   ctx.fillStyle = typeColor
@@ -704,7 +714,7 @@ const generateResultImage = async (result: TestResult): Promise<Blob> => {
 
 const ResultPage = () => {
   const navigate = useNavigate()
-  const { result, resetTest } = useTestStore()
+  const { result, resetTest, catNickname } = useTestStore()
 
   // 测试完成时标记 token 已使用
   useEffect(() => {
@@ -772,7 +782,7 @@ const ResultPage = () => {
     if (!result) return
 
     try {
-      const blob = await generateResultImage(result)
+      const blob = await generateResultImage(result, catNickname)
       const file = new File([blob], `猫咪MBTI-${result.type}.png`, { type: 'image/png' })
 
       // 优先使用 Web Share API（移动端支持）
@@ -904,6 +914,23 @@ const ResultPage = () => {
           animate={{ opacity: 1, y: 0 }}
           className="text-center mb-8"
         >
+          {/* 猫咪昵称标题 */}
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="mb-3"
+          >
+            <span className="text-gray-500 text-sm">🐾</span>
+            <span
+              className="mx-2 text-lg font-medium"
+              style={{ color: typeColor }}
+            >
+              {catNickname || '我家猫咪'}的MBTI报告
+            </span>
+            <span className="text-gray-500 text-sm">🐾</span>
+          </motion.div>
+
           {/* 猫咪头像 */}
           <motion.div
             initial={{ scale: 0.5, rotate: -10 }}

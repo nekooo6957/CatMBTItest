@@ -10,12 +10,14 @@ interface TestState {
   questions: typeof questions
   answers: Answer[]
   result: TestResult | null
+  catNickname: string
 
   // 操作
   answerQuestion: (questionId: number, score: Score) => void
   goBack: () => void
   resetTest: () => void
   getProgress: () => number
+  setCatNickname: (nickname: string) => void
 }
 
 export const useTestStore = create<TestState>()(
@@ -26,6 +28,7 @@ export const useTestStore = create<TestState>()(
       questions: questions,
       answers: [],
       result: null,
+      catNickname: '',
 
       // 回答问题
       answerQuestion: (questionId, score) => {
@@ -76,7 +79,13 @@ export const useTestStore = create<TestState>()(
           currentQuestionIndex: 0,
           answers: [],
           result: null,
+          catNickname: '',
         })
+      },
+
+      // 设置猫咪昵称
+      setCatNickname: (nickname) => {
+        set({ catNickname: nickname })
       },
 
       // 获取进度
@@ -91,6 +100,7 @@ export const useTestStore = create<TestState>()(
         answers: state.answers,
         result: state.result,
         currentQuestionIndex: state.currentQuestionIndex,
+        catNickname: state.catNickname,
       }),
     }
   )
