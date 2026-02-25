@@ -39,20 +39,20 @@ const DIMENSION_PAIRS = [
   { positive: 'J', negative: 'P', positiveName: '规律', negativeName: '随性' },
 ]
 
-// 维度颜色 - 莫兰迪色调，低饱和度
+// 维度颜色 - 温暖奶油色调（与 DimensionBar 组件一致）
 const DIMENSION_COLORS: Record<string, { dark: string; light: string }> = {
-  // E/I - 莫兰迪橙/赭石色
-  E: { dark: '#C4A484', light: '#E8D4C4' },
-  I: { dark: '#C4A484', light: '#E8D4C4' },
-  // S/N - 莫兰迪蓝/灰蓝色
-  S: { dark: '#8FA5B8', light: '#C8D4E0' },
-  N: { dark: '#8FA5B8', light: '#C8D4E0' },
-  // T/F - 莫兰迪绿/灰绿色
-  T: { dark: '#8FB8A8', light: '#C8E0D8' },
-  F: { dark: '#8FB8A8', light: '#C8E0D8' },
-  // J/P - 莫兰迪紫/灰紫色
-  J: { dark: '#A898B8', light: '#D8D0E0' },
-  P: { dark: '#A898B8', light: '#D8D0E0' },
+  // E/I - 温暖珊瑚橙/奶油橙
+  E: { dark: '#E8927C', light: '#F5C4A0' },
+  I: { dark: '#E8927C', light: '#F5C4A0' },
+  // S/N - 清澈薄荷绿/淡雅薄荷
+  S: { dark: '#6BB5A0', light: '#A8D8C8' },
+  N: { dark: '#6BB5A0', light: '#A8D8C8' },
+  // T/F - 舒适天空蓝/柔和天蓝
+  T: { dark: '#5A9BC8', light: '#9CC8E8' },
+  F: { dark: '#5A9BC8', light: '#9CC8E8' },
+  // J/P - 温柔紫罗兰/淡雅薰衣草
+  J: { dark: '#9B8DC7', light: '#C8BFE8' },
+  P: { dark: '#9B8DC7', light: '#C8BFE8' },
 }
 
 const DIMENSION_LABELS: Record<string, string> = {
@@ -143,22 +143,22 @@ const drawRadarChart = (
   data: DimensionScore[],
   typeColor: string
 ) => {
-  const dimensions = ['E', 'S', 'T', 'J', 'I', 'N', 'F', 'P'] // 与 Recharts 一致的顺序
+  const dimensions = ['E', 'I', 'S', 'N', 'T', 'F', 'J', 'P'] // 与 Recharts 一致的顺序
   const dimLabels: Record<string, string> = {
     E: '外向E', I: '内向I', S: '务实S', N: '好奇N',
     T: '独立T', F: '粘人F', J: '规律J', P: '随性P'
   }
-  // 莫兰迪色调
+  // 温暖奶油色调（与 RadarChart 组件一致）
   const dimColors: Record<string, string> = {
-    E: '#C4A484', I: '#E8D4C4', S: '#8FA5B8', N: '#C8D4E0',
-    T: '#8FB8A8', F: '#C8E0D8', J: '#A898B8', P: '#D8D0E0'
+    E: '#E8927C', I: '#F5C4A0', S: '#6BB5A0', N: '#A8D8C8',
+    T: '#5A9BC8', F: '#9CC8E8', J: '#9B8DC7', P: '#C8BFE8'
   }
 
   const angleStep = (Math.PI * 2) / dimensions.length
   const startAngle = -Math.PI / 2 // 从顶部开始
 
   // 绘制同心圆网格
-  ctx.strokeStyle = '#E8DDD4'
+  ctx.strokeStyle = '#E8E0D8'
   ctx.lineWidth = 1
   for (let i = 1; i <= 4; i++) {
     const r = (radius * i) / 4
@@ -168,7 +168,7 @@ const drawRadarChart = (
   }
 
   // 绘制轴线
-  ctx.strokeStyle = '#E8DDD4'
+  ctx.strokeStyle = '#E8E0D8'
   ctx.lineWidth = 1
   for (let i = 0; i < dimensions.length; i++) {
     const angle = startAngle + i * angleStep
@@ -220,15 +220,11 @@ const drawRadarChart = (
   ctx.lineWidth = 2.5
   ctx.stroke()
 
-  // 绘制标签（简化版，只显示中文）
-  const simpleLabels: Record<string, string> = {
-    E: '外向', I: '内向', S: '务实', N: '好奇',
-    T: '独立', F: '粘人', J: '规律', P: '随性'
-  }
-  ctx.font = 'bold 15px system-ui, sans-serif'
+  // 绘制标签（与 RadarChart 组件一致：维度字母+中文）
+  ctx.font = '500 13px system-ui, sans-serif'
   ctx.textBaseline = 'middle'
   points.forEach(p => {
-    const labelR = radius + 32
+    const labelR = radius + 36
     const lx = cx + Math.cos(p.angle) * labelR
     const ly = cy + Math.sin(p.angle) * labelR
 
@@ -241,8 +237,9 @@ const drawRadarChart = (
       ctx.textAlign = 'right'
     }
 
-    ctx.fillStyle = p.color
-    ctx.fillText(simpleLabels[p.label.charAt(0)] || p.label, lx, ly)
+    // 使用对应维度的颜色
+    ctx.fillStyle = dimColors[p.label.charAt(0)] || p.color
+    ctx.fillText(p.label, lx, ly)
   })
 }
 
@@ -527,21 +524,27 @@ const generateResultImage = async (result: TestResult): Promise<Blob> => {
     const leftW = (leftPercent / 100) * barMaxW
     const rightW = barMaxW - leftW
 
+    // 维度文字颜色（与 DimensionBar 组件一致）
+    const dimTextColors: Record<string, string> = {
+      E: '#D07058', I: '#E8927C', S: '#4A9580', N: '#6BB5A0',
+      T: '#3A7BA8', F: '#5A9BC8', J: '#7B6DA7', P: '#9B8DC7'
+    }
+
     // 左侧标签
-    ctx.fillStyle = leftColor
+    ctx.fillStyle = dimTextColors[leftDim] || leftColor
     ctx.font = 'bold 24px system-ui, sans-serif'
     ctx.textAlign = 'left'
     ctx.fillText(leftDim, margin + cardPadding, dimY + 22)
-    ctx.fillStyle = '#6B7280'
+    ctx.fillStyle = '#8B8178'
     ctx.font = '18px system-ui, sans-serif'
     ctx.fillText(DIMENSION_LABELS[leftDim], margin + cardPadding + 30, dimY + 22)
 
     // 右侧标签
-    ctx.fillStyle = '#6B7280'
+    ctx.fillStyle = '#8B8178'
     ctx.font = '18px system-ui, sans-serif'
     ctx.textAlign = 'right'
     ctx.fillText(DIMENSION_LABELS[rightDim], margin + cardPadding + innerCardWidth - 30, dimY + 22)
-    ctx.fillStyle = rightColor
+    ctx.fillStyle = dimTextColors[rightDim] || rightColor
     ctx.font = 'bold 24px system-ui, sans-serif'
     ctx.fillText(rightDim, margin + cardPadding + innerCardWidth, dimY + 22)
 
