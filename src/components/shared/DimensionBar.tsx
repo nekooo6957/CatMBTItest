@@ -5,20 +5,20 @@ interface DimensionBarProps {
   rightDimension: DimensionScore
 }
 
-// 更鲜明的颜色方案 - 高对比度渐变色系
+// 同色系颜色方案 - 每个维度的两端使用同色系的不同深浅，保证清晰度
 const DIMENSION_COLORS: Record<string, { bg: string; text: string; hex: string }> = {
-  // E/I - 珊瑚橙/暖粉 - 更鲜明的颜色
-  E: { bg: 'bg-gradient-to-r from-orange-500 to-orange-400', text: 'text-orange-600', hex: '#F97316' },
-  I: { bg: 'bg-gradient-to-r from-rose-400 to-rose-500', text: 'text-rose-500', hex: '#F43F5E' },
-  // S/N - 海洋蓝/天蓝
-  S: { bg: 'bg-gradient-to-r from-cyan-500 to-sky-500', text: 'text-cyan-600', hex: '#06B6D4' },
-  N: { bg: 'bg-gradient-to-r from-blue-500 to-indigo-500', text: 'text-blue-600', hex: '#3B82F6' },
-  // T/F - 森林绿/薄荷绿
-  T: { bg: 'bg-gradient-to-r from-emerald-500 to-teal-500', text: 'text-emerald-600', hex: '#10B981' },
-  F: { bg: 'bg-gradient-to-r from-teal-400 to-cyan-500', text: 'text-teal-600', hex: '#14B8A6' },
-  // J/P - 紫罗兰/淡紫
-  J: { bg: 'bg-gradient-to-r from-violet-500 to-purple-500', text: 'text-violet-600', hex: '#8B5CF6' },
-  P: { bg: 'bg-gradient-to-r from-fuchsia-500 to-pink-500', text: 'text-fuchsia-600', hex: '#D946EF' },
+  // E/I - 橙色系：E 深橙，I 浅橙
+  E: { bg: 'bg-gradient-to-r from-orange-600 to-orange-500', text: 'text-orange-600', hex: '#EA580C' },
+  I: { bg: 'bg-gradient-to-r from-orange-300 to-orange-200', text: 'text-orange-500', hex: '#FDBA74' },
+  // S/N - 蓝色系：S 深蓝，N 浅蓝
+  S: { bg: 'bg-gradient-to-r from-blue-600 to-blue-500', text: 'text-blue-600', hex: '#2563EB' },
+  N: { bg: 'bg-gradient-to-r from-blue-300 to-blue-200', text: 'text-blue-500', hex: '#93C5FD' },
+  // T/F - 绿色系：T 深绿，F 浅绿
+  T: { bg: 'bg-gradient-to-r from-emerald-600 to-emerald-500', text: 'text-emerald-600', hex: '#059669' },
+  F: { bg: 'bg-gradient-to-r from-emerald-300 to-emerald-200', text: 'text-emerald-500', hex: '#6EE7B7' },
+  // J/P - 紫色系：J 深紫，P 浅紫
+  J: { bg: 'bg-gradient-to-r from-violet-600 to-violet-500', text: 'text-violet-600', hex: '#7C3AED' },
+  P: { bg: 'bg-gradient-to-r from-violet-300 to-violet-200', text: 'text-violet-500', hex: '#C4B5FD' },
 }
 
 const DIMENSION_LABELS: Record<string, string> = {
